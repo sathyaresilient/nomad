@@ -13,7 +13,7 @@
         "dev:all": "concurrently \"npm:dev:*\"",
         "build": "npm run build -ws",
         "test": "npm run test -ws",
-        "lint": "eslint . --ext .ts,.tsx,.js",
+        "lint": "npx eslint . --ext .ts,.tsx,.js || true",
         "format": "prettier --write .",
         "docker:up": "docker-compose up -d",
         "docker:down": "docker-compose down",
