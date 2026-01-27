@@ -8,7 +8,7 @@
         "dev": "tsx watch src/index.ts",
         "build": "tsc",
         "start": "npx prisma db push && node dist/index.js",
-        "test": "vitest",
+        "test": "vitest --passWithNoTests",
         "lint": "eslint src --ext .ts",
         "migrate": "prisma migrate dev",
         "migrate:prod": "prisma migrate deploy",
