@@ -133,8 +133,7 @@ jobs:
         with:
           service: nomadly-dev-api-gateway
           region: ${{ env.GCP_REGION }}
-          image: ${{ needs.build.outputs.image }}
-          # No env_vars needed - secrets are managed by Secret Manager via Terraform
+          image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}
 
       - name: Post Deploy Health Check
         run: |
@@ -166,13 +165,13 @@ jobs:
         with:
           service: nomadly-prod-api-gateway
           region: ${{ env.GCP_REGION }}
-          image: ${{ needs.build.outputs.image }}
-          # No env_vars needed - secrets are managed by Secret Manager via Terraform
+          image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}
           flags: |
-            --min-instances=2
-            --max-instances=100
-            --cpu=2
-            --memory=2Gi
+            --min-instances=0
+            --max-instances=10
+            --cpu=1
+            --memory=512Mi
+            --allow-unauthenticated
 
       - name: Post Deploy Health Check
         run: |
