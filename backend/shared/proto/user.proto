@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package nomadly.user;
+
+import "common.proto";
+
+option go_package = "github.com/nomadly/backend/shared/proto/user";
+
+// =============================================================
+// User Service
+// Handles authentication, user profiles, and trust scores
+// =============================================================
+
+service UserService {
+  // Authentication
+  rpc Register(RegisterRequest) returns (AuthResponse);
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
+  rpc Logout(LogoutRequest) returns (common.Empty);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  
+  // User Profile
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (User);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (common.Empty);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  
+  // Trust & Reputation
+  rpc GetTrustScore(GetTrustScoreRequest) returns (TrustScore);
+  rpc UpdateTrustScore(UpdateTrustScoreRequest) returns (TrustScore);
+}
+
+// =============================================================
+// Messages - Authentication
+// =============================================================
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string display_name = 3;
+  optional string phone = 4;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  optional DeviceInfo device_info = 3;
+}
+
+message AuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+  User user = 4;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string email = 3;
+  int64 expires_at = 4;
+}
+
+message DeviceInfo {
+  string device_id = 1;
+  string device_type = 2;
+  string os_version = 3;
+  string app_version = 4;
+  string ip_address = 5;
+}
+
+// =============================================================
+// Messages - User Profile
+// =============================================================
+
+message User {
+  string id = 1;
+  string email = 2;
+  optional string phone = 3;
+  string display_name = 4;
+  optional string avatar_url = 5;
+  optional string bio = 6;
+  optional string travel_style = 7;
+  repeated string languages = 8;
+  
+  // Trust & Reputation
+  string trust_level = 9;
+  double rating = 10;
+  int32 trip_count = 11;
+  int32 feedback_count = 12;
+  int32 countries_visited = 13;
+  repeated string favorite_destinations = 14;
+  
+  // Status
+  bool email_verified = 15;
+  bool is_verified = 16;
+  bool is_active = 17;
+  
+  // Timestamps
+  common.Timestamp created_at = 18;
+  common.Timestamp updated_at = 19;
+  common.Timestamp last_active_at = 20;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  optional string display_name = 2;
+  optional string avatar_url = 3;
+  optional string bio = 4;
+  optional string travel_style = 5;
+  repeated string languages = 6;
+  repeated string favorite_destinations = 7;
+}
+
+message DeleteUserRequest {
+  string user_id = 1;
+}
+
+message ListUsersRequest {
+  common.PaginationRequest pagination = 1;
+  optional string search_query = 2;
+  optional string trust_level = 3;
+  optional bool verified_only = 4;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  common.PaginationResponse pagination = 2;
+}
+
+// =============================================================
+// Messages - Trust Score
+// =============================================================
+
+message TrustScore {
+  string user_id = 1;
+  string trust_level = 2;  // new, bronze, silver, gold, platinum
+  double rating = 3;
+  int32 trip_count = 4;
+  int32 feedback_count = 5;
+  int32 positive_reviews = 6;
+  int32 negative_reviews = 7;
+  common.Timestamp last_calculated = 8;
+}
+
+message GetTrustScoreRequest {
+  string user_id = 1;
+}
+
+message UpdateTrustScoreRequest {
+  string user_id = 1;
+  optional int32 add_trip_count = 2;
+  optional int32 add_positive_review = 3;
+  optional int32 add_negative_review = 4;
+}

@@ -1,0 +1,456 @@
+// Prisma Schema for Nomadly - DEBUG 2026-01-26-12-45
+// Matches the PostgreSQL schema in init-db.sql
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+  binaryTargets   = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth", "social", "travel", "chat", "public"]
+}
+
+// =====================================================
+// AUTH MODELS
+// =====================================================
+
+model User {
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  phone                 String?   @unique
+  passwordHash          String?   @map("password_hash")
+  displayName           String    @map("display_name")
+  avatarUrl             String?   @map("avatar_url")
+  bio                   String?
+  travelStyle           String?   @map("travel_style")
+  languages             String[]  @default([])
+  
+  // Trust & reputation
+  trustLevel            String    @default("new") @map("trust_level")
+  rating                Decimal   @default(0) @db.Decimal(3, 2)
+  tripCount             Int       @default(0) @map("trip_count")
+  feedbackCount         Int       @default(0) @map("feedback_count")
+  countriesVisited      Int       @default(0) @map("countries_visited")
+  favoriteDestinations  String[]  @default([]) @map("favorite_destinations")
+  
+  // Auth metadata
+  emailVerified         Boolean   @default(false) @map("email_verified")
+  phoneVerified         Boolean   @default(false) @map("phone_verified")
+  authProvider          String    @default("email") @map("auth_provider")
+  firebaseUid           String?   @unique @map("firebase_uid")
+  twoFactorEnabled      Boolean   @default(false) @map("two_factor_enabled")
+  
+  // Status
+  isActive              Boolean   @default(true) @map("is_active")
+  isVerified            Boolean   @default(false) @map("is_verified")
+  bannedUntil           DateTime? @map("banned_until")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  lastActiveAt          DateTime  @default(now()) @map("last_active_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  // Relations
+  sessions              UserSession[]
+  trips                 Trip[]
+  connectionsFrom       Connection[]    @relation("ConnectionFrom")
+  connectionsTo         Connection[]    @relation("ConnectionTo")
+  groupMemberships      GroupMember[]
+  posts                 Post[]
+  reactions             Reaction[]
+  comments              Comment[]
+  conversationMemberships ConversationMember[]
+  messages              Message[]
+  feedbackGiven         Feedback[]      @relation("FeedbackFrom")
+  feedbackReceived      Feedback[]      @relation("FeedbackTo")
+
+  @@map("users")
+  @@schema("auth")
+}
+
+model UserSession {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @map("refresh_token_hash")
+  deviceInfo       Json?     @map("device_info")
+  ipAddress        String?   @map("ip_address")
+  userAgent        String?   @map("user_agent")
+  expiresAt        DateTime  @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  revokedAt        DateTime? @map("revoked_at")
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshTokenHash])
+  @@map("user_sessions")
+  @@schema("auth")
+}
+
+// =====================================================
+// SOCIAL MODELS
+// =====================================================
+
+model Connection {
+  id           String   @id @default(uuid())
+  fromUserId   String   @map("from_user_id")
+  toUserId     String   @map("to_user_id")
+  status       String   @default("pending")
+  icebreaker   String?
+  tripId       String?  @map("trip_id")
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  fromUser     User     @relation("ConnectionFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser       User     @relation("ConnectionTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@map("connections")
+  @@schema("social")
+}
+
+model Group {
+  id              String    @id @default(uuid())
+  name            String
+  type            String
+  emoji           String?
+  description     String?
+  coverImageUrl   String?   @map("cover_image_url")
+  destination     String?
+  country         String?
+  startDate       DateTime? @map("start_date")
+  endDate         DateTime? @map("end_date")
+  privacy         String    @default("public")
+  
+  // Stats
+  memberCount     Int       @default(0) @map("member_count")
+  postCount       Int       @default(0) @map("post_count")
+  
+  // Moderation
+  isVerified      Boolean   @default(false) @map("is_verified")
+  moderationLevel String    @default("standard") @map("moderation_level")
+  
+  createdBy       String    @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  members         GroupMember[]
+  posts           Post[]
+  joinRequests    JoinRequest[]
+
+  @@index([type])
+  @@index([destination])
+  @@map("groups")
+  @@schema("social")
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  groupId   String   @map("group_id")
+  userId    String   @map("user_id")
+  role      String   @default("member")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  muted     Boolean  @default(false)
+
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_members")
+  @@schema("social")
+}
+
+model JoinRequest {
+  id        String   @id @default(uuid())
+  groupId   String   @map("group_id")
+  userId    String   @map("user_id")
+  message   String?
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("join_requests")
+  @@schema("social")
+}
+
+model Post {
+  id               String    @id @default(uuid())
+  groupId          String    @map("group_id")
+  authorId         String    @map("author_id")
+  type             String
+  content          String?
+  mediaUrls        String[]  @default([]) @map("media_urls")
+  metadata         Json      @default("{}")
+  
+  // Engagement
+  reactionCount    Int       @default(0) @map("reaction_count")
+  commentCount     Int       @default(0) @map("comment_count")
+  shareCount       Int       @default(0) @map("share_count")
+  viewCount        Int       @default(0) @map("view_count")
+  
+  // Status
+  isPinned         Boolean   @default(false) @map("is_pinned")
+  moderationStatus String    @default("approved") @map("moderation_status")
+  spamScore        Decimal   @default(0) @map("spam_score") @db.Decimal(5, 4)
+  
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  // Relations
+  group            Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  author           User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reactions        Reaction[]
+  comments         Comment[]
+
+  @@index([groupId])
+  @@index([authorId])
+  @@index([createdAt(sort: Desc)])
+  @@map("posts")
+  @@schema("social")
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  emoji     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@map("reactions")
+  @@schema("social")
+}
+
+model Comment {
+  id         String    @id @default(uuid())
+  postId     String    @map("post_id")
+  authorId   String    @map("author_id")
+  parentId   String?   @map("parent_id")
+  content    String
+  
+  likeCount  Int       @default(0) @map("like_count")
+  replyCount Int       @default(0) @map("reply_count")
+  
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  post       Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([parentId])
+  @@map("comments")
+  @@schema("social")
+}
+
+// =====================================================
+// TRAVEL MODELS
+// =====================================================
+
+model Trip {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  city        String
+  country     String
+  countryCode String?  @map("country_code") @db.Char(2)
+  latitude    Decimal? @db.Decimal(10, 8)
+  longitude   Decimal? @db.Decimal(11, 8)
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  status      String   @default("planning")
+  openTo      String[] @default([]) @map("open_to")
+  notes       String?
+  visibility  String   @default("public")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([startDate, endDate])
+  @@index([city, country])
+  @@map("trips")
+  @@schema("travel")
+}
+
+model Feedback {
+  id              String   @id @default(uuid())
+  fromUserId      String   @map("from_user_id")
+  toUserId        String   @map("to_user_id")
+  tripId          String?  @map("trip_id")
+  wouldTravelAgain Boolean? @map("would_travel_again")
+  vibeRating      String?  @map("vibe_rating")
+  anonymousNote   String?  @map("anonymous_note")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  fromUser        User     @relation("FeedbackFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser          User     @relation("FeedbackTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([toUserId])
+  @@map("feedback")
+  @@schema("travel")
+}
+
+// =====================================================
+// CHAT MODELS
+// =====================================================
+
+model Conversation {
+  id        String   @id @default(uuid())
+  type      String   @default("direct")
+  groupId   String?  @map("group_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members   ConversationMember[]
+  messages  Message[]
+
+  @@map("conversations")
+  @@schema("chat")
+}
+
+model ConversationMember {
+  id             String    @id @default(uuid())
+  conversationId String    @map("conversation_id")
+  userId         String    @map("user_id")
+  lastReadAt     DateTime? @map("last_read_at")
+  muted          Boolean   @default(false)
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+  @@map("conversation_members")
+  @@schema("chat")
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String    @map("conversation_id")
+  senderId       String    @map("sender_id")
+  content        String?
+  messageType    String    @default("text") @map("message_type")
+  mediaUrls      String[]  @default([]) @map("media_urls")
+  metadata       Json      @default("{}")
+  
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt(sort: Desc)])
+  @@map("messages")
+  @@schema("chat")
+}
+
+// =====================================================
+// MEDIA MODELS
+// =====================================================
+
+model Media {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  filename     String
+  contentType  String    @map("content_type")
+  size         Int
+  purpose      String    // avatar, cover, post, message, document
+  storagePath  String    @map("storage_path")
+  metadata     Json      @default("{}")
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@index([userId])
+  @@index([purpose])
+  @@map("media")
+  @@schema("public")
+}
+
+// =====================================================
+// NOTIFICATION MODELS
+// =====================================================
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  type        String    // message, group_invite, trip_match, connection_request, etc.
+  title       String
+  body        String
+  data        Json      @default("{}")
+  read        Boolean   @default(false)
+  
+  // Optional references
+  actorId     String?   @map("actor_id")
+  targetId    String?   @map("target_id")
+  targetType  String?   @map("target_type")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
+  @@schema("public")
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  platform  String   // ios, android, web
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("device_tokens")
+  @@schema("public")
+}
+
+model NotificationPreference {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique @map("user_id")
+  
+  pushEnabled             Boolean  @default(true) @map("push_enabled")
+  emailEnabled            Boolean  @default(true) @map("email_enabled")
+  
+  messageNotifications    Boolean  @default(true) @map("message_notifications")
+  groupNotifications      Boolean  @default(true) @map("group_notifications")
+  tripNotifications       Boolean  @default(true) @map("trip_notifications")
+  connectionNotifications Boolean  @default(true) @map("connection_notifications")
+  marketingEmails         Boolean  @default(false) @map("marketing_emails")
+  
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_preferences")
+  @@schema("public")
+}
+

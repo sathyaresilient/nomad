@@ -1,0 +1,310 @@
+# All Microservices Kubernetes Deployments
+---
+# Notification Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: nomadly
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      serviceAccountName: notification-service
+      containers:
+        - name: notification-service
+          image: us-central1-docker.pkg.dev/nomadly-485421/nomadly-images/notification-service:latest
+          ports:
+            - containerPort: 3002
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          env:
+            - name: PORT
+              value: "3002"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet: { path: /health, port: 3002 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: 3002 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: nomadly
+spec:
+  ports:
+    - port: 80
+      targetPort: 3002
+  selector:
+    app: notification-service
+---
+# Media Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media-service
+  namespace: nomadly
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: media-service
+  template:
+    metadata:
+      labels:
+        app: media-service
+    spec:
+      serviceAccountName: media-service
+      containers:
+        - name: media-service
+          image: us-central1-docker.pkg.dev/nomadly-485421/nomadly-images/media-service:latest
+          ports:
+            - containerPort: 3003
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 1000m, memory: 1Gi }
+          env:
+            - name: PORT
+              value: "3003"
+            - name: GCS_MEDIA_BUCKET
+              value: "nomadly-media-prod"
+            - name: GCS_UPLOADS_BUCKET
+              value: "nomadly-uploads-prod"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet: { path: /health, port: 3003 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: 3003 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: media-service
+  namespace: nomadly
+spec:
+  ports:
+    - port: 80
+      targetPort: 3003
+  selector:
+    app: media-service
+---
+# Travel Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-service
+  namespace: nomadly
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: travel-service
+  template:
+    metadata:
+      labels:
+        app: travel-service
+    spec:
+      serviceAccountName: travel-service
+      containers:
+        - name: travel-service
+          image: us-central1-docker.pkg.dev/nomadly-485421/nomadly-images/travel-service:latest
+          ports:
+            - containerPort: 3004
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          env:
+            - name: PORT
+              value: "3004"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet: { path: /health, port: 3004 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: 3004 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: travel-service
+  namespace: nomadly
+spec:
+  ports:
+    - port: 80
+      targetPort: 3004
+  selector:
+    app: travel-service
+---
+# Social Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: social-service
+  namespace: nomadly
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: social-service
+  template:
+    metadata:
+      labels:
+        app: social-service
+    spec:
+      serviceAccountName: social-service
+      containers:
+        - name: social-service
+          image: us-central1-docker.pkg.dev/nomadly-485421/nomadly-images/social-service:latest
+          ports:
+            - containerPort: 3005
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          env:
+            - name: PORT
+              value: "3005"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet: { path: /health, port: 3005 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: 3005 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: social-service
+  namespace: nomadly
+spec:
+  ports:
+    - port: 80
+      targetPort: 3005
+  selector:
+    app: social-service
+---
+# Messaging Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-service
+  namespace: nomadly
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: messaging-service
+  template:
+    metadata:
+      labels:
+        app: messaging-service
+    spec:
+      serviceAccountName: messaging-service
+      containers:
+        - name: messaging-service
+          image: us-central1-docker.pkg.dev/nomadly-485421/nomadly-images/messaging-service:latest
+          ports:
+            - containerPort: 3006
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits: { cpu: 1000m, memory: 1Gi }
+          env:
+            - name: PORT
+              value: "3006"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet: { path: /health, port: 3006 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: 3006 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: messaging-service
+  namespace: nomadly
+spec:
+  ports:
+    - port: 80
+      targetPort: 3006
+  selector:
+    app: messaging-service

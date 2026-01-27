@@ -1,0 +1,61 @@
+# Ingress Configuration
+# Routes external traffic to services
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nomadly-ingress
+  namespace: nomadly
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "nomadly-api-ip"
+    networking.gke.io/managed-certificates: "nomadly-cert"
+    networking.gke.io/v1beta1.FrontendConfig: "nomadly-frontend-config"
+spec:
+  rules:
+    - host: api.nomadly.app
+      http:
+        paths:
+          # User Service routes
+          - path: /api/v1/auth/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 80
+          - path: /api/v1/users/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 80
+          # API Gateway (default routes)
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 80
+---
+# Managed Certificate
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: nomadly-cert
+  namespace: nomadly
+spec:
+  domains:
+    - api.nomadly.app
+---
+# Frontend Config (HTTPS redirect)
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: nomadly-frontend-config
+  namespace: nomadly
+spec:
+  redirectToHttps:
+    enabled: true
+    responseCodeName: MOVED_PERMANENTLY_DEFAULT

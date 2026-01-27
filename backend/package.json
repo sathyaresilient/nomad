@@ -1,0 +1,33 @@
+{
+    "name": "@nomadly/backend",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Nomadly Backend Monorepo",
+    "workspaces": [
+        "services/*",
+        "shared/*"
+    ],
+    "scripts": {
+        "dev": "npm run dev:gateway",
+        "dev:gateway": "npm run dev -w @nomadly/api-gateway",
+        "dev:all": "concurrently \"npm:dev:*\"",
+        "build": "npm run build -ws",
+        "test": "npm run test -ws",
+        "lint": "eslint . --ext .ts,.tsx,.js",
+        "format": "prettier --write .",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "db:migrate": "npm run migrate -w @nomadly/api-gateway",
+        "db:seed": "npm run seed -w @nomadly/api-gateway"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "concurrently": "^8.2.0",
+        "eslint": "^8.55.0",
+        "prettier": "^3.1.0",
+        "typescript": "^5.3.0"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    }
+}

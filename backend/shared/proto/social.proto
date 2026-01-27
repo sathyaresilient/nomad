@@ -1,0 +1,187 @@
+syntax = "proto3";
+
+package nomadly.social;
+
+import "common.proto";
+
+option go_package = "github.com/nomadly/backend/shared/proto/social";
+
+service SocialService {
+  // Groups
+  rpc CreateGroup(CreateGroupRequest) returns (Group);
+  rpc GetGroup(GetGroupRequest) returns (Group);
+  rpc UpdateGroup(UpdateGroupRequest) returns (Group);
+  rpc DeleteGroup(DeleteGroupRequest) returns (common.Empty);
+  rpc JoinGroup(JoinGroupRequest) returns (GroupMember);
+  rpc LeaveGroup(LeaveGroupRequest) returns (common.Empty);
+  rpc ListGroups(ListGroupsRequest) returns (ListGroupsResponse);
+  
+  // Connections
+  rpc SendConnectionRequest(ConnectionRequest) returns (Connection);
+  rpc AcceptConnection(AcceptConnectionRequest) returns (Connection);
+  rpc RejectConnection(RejectConnectionRequest) returns (common.Empty);
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse);
+  
+  // Posts
+  rpc CreatePost(CreatePostRequest) returns (Post);
+  rpc GetPost(GetPostRequest) returns (Post);
+  rpc ReactToPost(ReactToPostRequest) returns (common.Empty);
+  rpc CommentOnPost(CommentOnPostRequest) returns (Comment);
+}
+
+message Group {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  string emoji = 4;
+  string description = 5;
+  string cover_image_url = 6;
+  string destination = 7;
+  string country = 8;
+  common.Timestamp start_date = 9;
+  common.Timestamp end_date = 10;
+  string privacy = 11;
+  int32 member_count = 12;
+  bool is_verified = 13;
+}
+
+message GroupMember {
+  string id = 1;
+  string group_id = 2;
+  string user_id = 3;
+  string role = 4;
+  common.Timestamp joined_at = 5;
+}
+
+message Connection {
+  string id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;
+  string status = 4;
+  string icebreaker = 5;
+  common.Timestamp created_at = 6;
+}
+
+message Post {
+  string id = 1;
+  string group_id = 2;
+  string author_id = 3;
+  string type = 4;
+  string content = 5;
+  repeated string media_urls = 6;
+  int32 reaction_count = 7;
+  int32 comment_count = 8;
+  common.Timestamp created_at = 9;
+}
+
+message Comment {
+  string id = 1;
+  string post_id = 2;
+  string author_id = 3;
+  string content = 4;
+  int32 like_count = 5;
+  common.Timestamp created_at = 6;
+}
+
+// Request messages
+message CreateGroupRequest {
+  string created_by = 1;
+  string name = 2;
+  string type = 3;
+  string emoji = 4;
+  string description = 5;
+  string destination = 6;
+  string privacy = 7;
+}
+
+message GetGroupRequest {
+  string group_id = 1;
+}
+
+message UpdateGroupRequest {
+  string group_id = 1;
+  string user_id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  optional string cover_image_url = 5;
+}
+
+message DeleteGroupRequest {
+  string group_id = 1;
+  string user_id = 2;
+}
+
+message JoinGroupRequest {
+  string group_id = 1;
+  string user_id = 2;
+  string message = 3;
+}
+
+message LeaveGroupRequest {
+  string group_id = 1;
+  string user_id = 2;
+}
+
+message ListGroupsRequest {
+  string user_id = 1;
+  string type = 2;
+  bool my_groups_only = 3;
+  common.PaginationRequest pagination = 4;
+}
+
+message ListGroupsResponse {
+  repeated Group groups = 1;
+  common.PaginationResponse pagination = 2;
+}
+
+message ConnectionRequest {
+  string from_user_id = 1;
+  string to_user_id = 2;
+  string icebreaker = 3;
+}
+
+message AcceptConnectionRequest {
+  string connection_id = 1;
+  string user_id = 2;
+}
+
+message RejectConnectionRequest {
+  string connection_id = 1;
+  string user_id = 2;
+}
+
+message ListConnectionsRequest {
+  string user_id = 1;
+  string status = 2;
+  common.PaginationRequest pagination = 3;
+}
+
+message ListConnectionsResponse {
+  repeated Connection connections = 1;
+  common.PaginationResponse pagination = 2;
+}
+
+message CreatePostRequest {
+  string group_id = 1;
+  string author_id = 2;
+  string type = 3;
+  string content = 4;
+  repeated string media_urls = 5;
+}
+
+message GetPostRequest {
+  string post_id = 1;
+}
+
+message ReactToPostRequest {
+  string post_id = 1;
+  string user_id = 2;
+  string emoji = 3;
+}
+
+message CommentOnPostRequest {
+  string post_id = 1;
+  string author_id = 2;
+  string content = 3;
+  string parent_id = 4;
+}

@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package nomadly.media;
+
+import "common.proto";
+
+option go_package = "github.com/nomadly/backend/shared/proto/media";
+
+service MediaService {
+  rpc GenerateUploadUrl(GenerateUploadUrlRequest) returns (GenerateUploadUrlResponse);
+  rpc ConfirmUpload(ConfirmUploadRequest) returns (Media);
+  rpc GetMedia(GetMediaRequest) returns (Media);
+  rpc DeleteMedia(DeleteMediaRequest) returns (common.Empty);
+  rpc ListUserMedia(ListUserMediaRequest) returns (ListUserMediaResponse);
+}
+
+message Media {
+  string id = 1;
+  string user_id = 2;
+  string filename = 3;
+  string content_type = 4;
+  int64 size = 5;
+  string purpose = 6;
+  string url = 7;
+  string cdn_url = 8;
+  common.Timestamp created_at = 9;
+}
+
+message GenerateUploadUrlRequest {
+  string user_id = 1;
+  string filename = 2;
+  string content_type = 3;
+  int64 size = 4;
+  string purpose = 5;
+}
+
+message GenerateUploadUrlResponse {
+  string upload_id = 1;
+  string signed_url = 2;
+  int32 expires_in = 3;
+}
+
+message ConfirmUploadRequest {
+  string upload_id = 1;
+  string user_id = 2;
+  map<string, string> metadata = 3;
+}
+
+message GetMediaRequest {
+  string media_id = 1;
+}
+
+message DeleteMediaRequest {
+  string media_id = 1;
+  string user_id = 2;
+}
+
+message ListUserMediaRequest {
+  string user_id = 1;
+  string purpose = 2;
+  common.PaginationRequest pagination = 3;
+}
+
+message ListUserMediaResponse {
+  repeated Media media = 1;
+  common.PaginationResponse pagination = 2;
+}

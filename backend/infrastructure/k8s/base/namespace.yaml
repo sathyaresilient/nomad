@@ -1,0 +1,8 @@
+# Kubernetes Namespace for Nomadly Services
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nomadly
+  labels:
+    app.kubernetes.io/name: nomadly
+    app.kubernetes.io/part-of: nomadly-platform

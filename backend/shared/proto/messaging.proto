@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package nomadly.messaging;
+
+import "common.proto";
+
+option go_package = "github.com/nomadly/backend/shared/proto/messaging";
+
+service MessagingService {
+  rpc CreateConversation(CreateConversationRequest) returns (Conversation);
+  rpc GetConversation(GetConversationRequest) returns (Conversation);
+  rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
+  rpc SendMessage(SendMessageRequest) returns (Message);
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+  rpc MarkAsRead(MarkAsReadRequest) returns (common.Empty);
+  rpc UpdatePresence(UpdatePresenceRequest) returns (common.Empty);
+  rpc GetPresence(GetPresenceRequest) returns (PresenceStatus);
+}
+
+message Conversation {
+  string id = 1;
+  string type = 2;
+  string group_id = 3;
+  repeated ConversationMember members = 4;
+  Message last_message = 5;
+  int32 unread_count = 6;
+  common.Timestamp updated_at = 7;
+}
+
+message ConversationMember {
+  string user_id = 1;
+  string display_name = 2;
+  string avatar_url = 3;
+  common.Timestamp last_read_at = 4;
+  bool muted = 5;
+}
+
+message Message {
+  string id = 1;
+  string conversation_id = 2;
+  string sender_id = 3;
+  string content = 4;
+  string message_type = 5;
+  repeated string media_urls = 6;
+  map<string, string> metadata = 7;
+  common.Timestamp created_at = 8;
+}
+
+message PresenceStatus {
+  string user_id = 1;
+  string status = 2;
+  common.Timestamp last_seen = 3;
+}
+
+// Request messages
+message CreateConversationRequest {
+  string creator_id = 1;
+  repeated string member_ids = 2;
+  string type = 3;
+  string group_id = 4;
+}
+
+message GetConversationRequest {
+  string conversation_id = 1;
+  string user_id = 2;
+}
+
+message ListConversationsRequest {
+  string user_id = 1;
+  common.PaginationRequest pagination = 2;
+}
+
+message ListConversationsResponse {
+  repeated Conversation conversations = 1;
+  common.PaginationResponse pagination = 2;
+}
+
+message SendMessageRequest {
+  string conversation_id = 1;
+  string sender_id = 2;
+  string content = 3;
+  string message_type = 4;
+  repeated string media_urls = 5;
+  map<string, string> metadata = 6;
+}
+
+message GetMessagesRequest {
+  string conversation_id = 1;
+  string user_id = 2;
+  string before_id = 3;
+  int32 limit = 4;
+}
+
+message GetMessagesResponse {
+  repeated Message messages = 1;
+  bool has_more = 2;
+}
+
+message MarkAsReadRequest {
+  string conversation_id = 1;
+  string user_id = 2;
+  string message_id = 3;
+}
+
+message UpdatePresenceRequest {
+  string user_id = 1;
+  string status = 2;
+}
+
+message GetPresenceRequest {
+  repeated string user_ids = 1;
+}

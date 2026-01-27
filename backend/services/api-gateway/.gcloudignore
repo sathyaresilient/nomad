@@ -1,0 +1,13 @@
+
+.git
+.gitignore
+node_modules/
+dist/
+.env
+
+# Allow these:
+!prisma/
+!src/
+!Dockerfile
+!package.json
+!tsconfig.json

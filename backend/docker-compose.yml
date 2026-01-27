@@ -1,0 +1,246 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: nomadly-postgres
+    environment:
+      POSTGRES_USER: nomadly
+      POSTGRES_PASSWORD: nomadly_dev
+      POSTGRES_DB: nomadly_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nomadly -d nomadly_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: nomadly-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch (for search)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: nomadly-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s http://localhost:9200/_cluster/health | grep -q 'green\\|yellow'",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # LocalStack (AWS services locally)
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: nomadly-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,sqs,ses
+      - DEBUG=1
+      - DATA_DIR=/var/lib/localstack/data
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # Mailhog (Email testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: nomadly-mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+
+  # pgAdmin (Database UI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nomadly-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nomadly.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  # ============================================================
+  # Microservices
+  # ============================================================
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: nomadly-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://nomadly:nomadly_dev@postgres:5432/nomadly_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-dev-secret-change-in-prod
+      ENABLE_PROXY: "true"
+      USER_SERVICE_URL: http://user-service:3001
+      NOTIFICATION_SERVICE_URL: http://notification-service:3002
+      MEDIA_SERVICE_URL: http://media-service:3003
+      TRAVEL_SERVICE_URL: http://travel-service:3004
+      SOCIAL_SERVICE_URL: http://social-service:3005
+      MESSAGING_SERVICE_URL: http://messaging-service:3006
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: nomadly-user-service
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://nomadly:nomadly_dev@postgres:5432/nomadly_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-dev-secret-change-in-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: nomadly-notification-service
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DATABASE_URL: postgresql://nomadly:nomadly_dev@postgres:5432/nomadly_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-dev-secret-change-in-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  media-service:
+    build:
+      context: ./services/media-service
+      dockerfile: Dockerfile
+    container_name: nomadly-media-service
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      DATABASE_URL: postgresql://nomadly:nomadly_dev@postgres:5432/nomadly_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-dev-secret-change-in-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  travel-service:
+    build:
+      context: ./services/travel-service
+      dockerfile: Dockerfile
+    container_name: nomadly-travel-service
+    ports:
+      - "3004:3004"
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      DATABASE_URL: postgresql://nomadly:nomadly_dev@postgres:5432/nomadly_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-dev-secret-change-in-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  social-service:
+    build:
+      context: ./services/social-service
+      dockerfile: Dockerfile
+    container_name: nomadly-social-service
+    ports:
+      - "3005:3005"
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      DATABASE_URL: postgresql://nomadly:nomadly_dev@postgres:5432/nomadly_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-dev-secret-change-in-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  messaging-service:
+    build:
+      context: ./services/messaging-service
+      dockerfile: Dockerfile
+    container_name: nomadly-messaging-service
+    ports:
+      - "3006:3006"
+    environment:
+      NODE_ENV: development
+      PORT: 3006
+      DATABASE_URL: postgresql://nomadly:nomadly_dev@postgres:5432/nomadly_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: local-dev-secret-change-in-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  localstack_data:
+
+networks:
+  default:
+    name: nomadly-network

@@ -1,0 +1,32 @@
+{
+    "name": "@nomadly/travel-service",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Nomadly Travel Service - Trips, Matching, Feedback",
+    "main": "dist/index.js",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "test": "vitest",
+        "generate": "prisma generate"
+    },
+    "dependencies": {
+        "@fastify/cors": "^9.0.0",
+        "@fastify/helmet": "^11.0.0",
+        "@fastify/jwt": "^8.0.0",
+        "@prisma/client": "^5.7.0",
+        "dotenv": "^16.3.0",
+        "fastify": "^4.25.0",
+        "ioredis": "^5.3.0",
+        "pino": "^8.17.0",
+        "zod": "^3.22.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "prisma": "^5.7.0",
+        "tsx": "^4.7.0",
+        "typescript": "^5.3.0",
+        "vitest": "^1.1.0"
+    }
+}

@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package nomadly.notification;
+
+import "common.proto";
+
+option go_package = "github.com/nomadly/backend/shared/proto/notification";
+
+service NotificationService {
+  rpc SendPush(SendPushRequest) returns (SendPushResponse);
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse);
+  rpc CreateNotification(CreateNotificationRequest) returns (Notification);
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkRead(MarkReadRequest) returns (common.Empty);
+  rpc RegisterDevice(RegisterDeviceRequest) returns (common.Empty);
+}
+
+message Notification {
+  string id = 1;
+  string user_id = 2;
+  string type = 3;
+  string title = 4;
+  string body = 5;
+  map<string, string> data = 6;
+  bool read = 7;
+  common.Timestamp created_at = 8;
+}
+
+message SendPushRequest {
+  string user_id = 1;
+  string title = 2;
+  string body = 3;
+  map<string, string> data = 4;
+}
+
+message SendPushResponse {
+  bool success = 1;
+  int32 devices_reached = 2;
+}
+
+message SendEmailRequest {
+  string user_id = 1;
+  string template = 2;
+  map<string, string> variables = 3;
+}
+
+message SendEmailResponse {
+  bool success = 1;
+  string message_id = 2;
+}
+
+message CreateNotificationRequest {
+  string user_id = 1;
+  string type = 2;
+  string title = 3;
+  string body = 4;
+  map<string, string> data = 5;
+}
+
+message ListNotificationsRequest {
+  string user_id = 1;
+  bool unread_only = 2;
+  common.PaginationRequest pagination = 3;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+  int32 unread_count = 2;
+  common.PaginationResponse pagination = 3;
+}
+
+message MarkReadRequest {
+  repeated string notification_ids = 1;
+}
+
+message RegisterDeviceRequest {
+  string user_id = 1;
+  string token = 2;
+  string platform = 3;
+}

@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package nomadly.travel;
+
+import "common.proto";
+
+option go_package = "github.com/nomadly/backend/shared/proto/travel";
+
+service TravelService {
+  rpc CreateTrip(CreateTripRequest) returns (Trip);
+  rpc GetTrip(GetTripRequest) returns (Trip);
+  rpc UpdateTrip(UpdateTripRequest) returns (Trip);
+  rpc DeleteTrip(DeleteTripRequest) returns (common.Empty);
+  rpc ListUserTrips(ListUserTripsRequest) returns (ListUserTripsResponse);
+  rpc FindOverlappingTravelers(FindOverlappingRequest) returns (FindOverlappingResponse);
+  rpc SubmitFeedback(SubmitFeedbackRequest) returns (Feedback);
+}
+
+message Trip {
+  string id = 1;
+  string user_id = 2;
+  string city = 3;
+  string country = 4;
+  string country_code = 5;
+  double latitude = 6;
+  double longitude = 7;
+  common.Timestamp start_date = 8;
+  common.Timestamp end_date = 9;
+  string status = 10;
+  repeated string open_to = 11;
+  string notes = 12;
+  string visibility = 13;
+}
+
+message CreateTripRequest {
+  string user_id = 1;
+  string city = 2;
+  string country = 3;
+  string country_code = 4;
+  double latitude = 5;
+  double longitude = 6;
+  common.Timestamp start_date = 7;
+  common.Timestamp end_date = 8;
+  repeated string open_to = 9;
+  string notes = 10;
+}
+
+message GetTripRequest {
+  string trip_id = 1;
+}
+
+message UpdateTripRequest {
+  string trip_id = 1;
+  string user_id = 2;
+  optional string city = 3;
+  optional string country = 4;
+  optional common.Timestamp start_date = 5;
+  optional common.Timestamp end_date = 6;
+  repeated string open_to = 7;
+  optional string status = 8;
+}
+
+message DeleteTripRequest {
+  string trip_id = 1;
+  string user_id = 2;
+}
+
+message ListUserTripsRequest {
+  string user_id = 1;
+  string status = 2;
+  bool upcoming_only = 3;
+  common.PaginationRequest pagination = 4;
+}
+
+message ListUserTripsResponse {
+  repeated Trip trips = 1;
+  common.PaginationResponse pagination = 2;
+}
+
+message FindOverlappingRequest {
+  string user_id = 1;
+  string city = 2;
+  common.Timestamp start_date = 3;
+  common.Timestamp end_date = 4;
+  int32 limit = 5;
+}
+
+message FindOverlappingResponse {
+  repeated TravelerMatch matches = 1;
+}
+
+message TravelerMatch {
+  string user_id = 1;
+  string display_name = 2;
+  string avatar_url = 3;
+  string trust_level = 4;
+  double rating = 5;
+  int32 overlap_days = 6;
+  double match_score = 7;
+  Trip trip = 8;
+}
+
+message Feedback {
+  string id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;
+  string trip_id = 4;
+  bool would_travel_again = 5;
+  string vibe_rating = 6;
+}
+
+message SubmitFeedbackRequest {
+  string from_user_id = 1;
+  string to_user_id = 2;
+  string trip_id = 3;
+  bool would_travel_again = 4;
+  string vibe_rating = 5;
+  string anonymous_note = 6;
+}
