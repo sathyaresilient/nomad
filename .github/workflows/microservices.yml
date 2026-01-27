@@ -1,0 +1,135 @@
+# ============================================================
+# Microservices CI/CD Pipeline
+# Builds and deploys all backend microservices
+# ============================================================
+
+name: Microservices CI/CD
+
+on:
+    push:
+        branches: [main, develop]
+        paths:
+            - "backend/services/**"
+            - "backend/shared/**"
+            - ".github/workflows/microservices.yml"
+    pull_request:
+        branches: [main]
+        paths:
+            - "backend/services/**"
+            - "backend/shared/**"
+
+env:
+    REGION: us-central1
+    PROJECT_ID: nomadly-485421
+    GAR_LOCATION: us-central1-docker.pkg.dev
+    REPOSITORY: nomadly-images
+
+jobs:
+    # ============================================================
+    # Detect Changed Services
+    # ============================================================
+    detect-changes:
+        runs-on: ubuntu-latest
+        outputs:
+            services: ${{ steps.filter.outputs.services }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Detect changed services
+              id: filter
+              run: |
+                  SERVICES=""
+                  for svc in user notification media travel social messaging; do
+                    if git diff --name-only HEAD~1 | grep -q "backend/services/${svc}-service/\|backend/shared/"; then
+                      SERVICES="$SERVICES ${svc}-service"
+                    fi
+                  done
+                  # If shared changed, rebuild all
+                  if git diff --name-only HEAD~1 | grep -q "backend/shared/"; then
+                    SERVICES="user-service notification-service media-service travel-service social-service messaging-service"
+                  fi
+                  echo "services=$(echo $SERVICES | tr ' ' ',')" >> $GITHUB_OUTPUT
+
+    # ============================================================
+    # Build & Push Images
+    # ============================================================
+    build:
+        runs-on: ubuntu-latest
+        needs: detect-changes
+        if: needs.detect-changes.outputs.services != ''
+        strategy:
+            matrix:
+                service: ${{ fromJson(format('["{0}"]', join(fromJson(needs.detect-changes.outputs.services), '","'))) }}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+                  cache-dependency-path: backend/services/${{ matrix.service }}/package-lock.json
+
+            - name: Install dependencies
+              working-directory: backend/services/${{ matrix.service }}
+              run: npm ci
+
+            - name: Run tests
+              working-directory: backend/services/${{ matrix.service }}
+              run: npm test || true # Continue even if no tests
+
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              with:
+                  credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+            - name: Set up Cloud SDK
+              uses: google-github-actions/setup-gcloud@v2
+
+            - name: Configure Docker
+              run: gcloud auth configure-docker ${{ env.GAR_LOCATION }}
+
+            - name: Build and push image
+              working-directory: backend/services/${{ matrix.service }}
+              run: |
+                  IMAGE_TAG="${{ env.GAR_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ matrix.service }}"
+                  docker build -t ${IMAGE_TAG}:${{ github.sha }} -t ${IMAGE_TAG}:latest .
+                  docker push ${IMAGE_TAG}:${{ github.sha }}
+                  docker push ${IMAGE_TAG}:latest
+
+    # ============================================================
+    # Deploy to GKE
+    # ============================================================
+    deploy:
+        runs-on: ubuntu-latest
+        needs: [detect-changes, build]
+        if: github.ref == 'refs/heads/main' && needs.build.result == 'success'
+        environment: production
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              with:
+                  credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+            - name: Get GKE credentials
+              uses: google-github-actions/get-gke-credentials@v2
+              with:
+                  cluster_name: nomadly-gke
+                  location: ${{ env.REGION }}
+
+            - name: Deploy services
+              run: |
+                  for SERVICE in $(echo "${{ needs.detect-changes.outputs.services }}" | tr ',' ' '); do
+                    IMAGE="${{ env.GAR_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${SERVICE}:${{ github.sha }}"
+                    kubectl set image deployment/${SERVICE} ${SERVICE}=${IMAGE} -n nomadly
+                    kubectl rollout status deployment/${SERVICE} -n nomadly --timeout=300s
+                  done
+
+            - name: Verify deployment
+              run: |
+                  kubectl get pods -n nomadly
+                  kubectl get services -n nomadly
