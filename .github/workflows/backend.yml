@@ -166,6 +166,9 @@ jobs:
           service: nomadly-prod-api-gateway
           region: ${{ env.GCP_REGION }}
           image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}
+          env_vars: |
+            NODE_ENV=production
+            DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
           flags: |
             --min-instances=0
             --max-instances=10
