@@ -41,8 +41,10 @@ export const useTripStore = create<TripState>((set, get) => ({
             return;
         }
 
-        const trips = (result.data || []) as Trip[];
-        set({ myTrips: trips, isLoading: false });
+        // API returns { data: trips[] }, so extract the inner data array
+        const responseData = result.data as any;
+        const trips = (responseData?.data || responseData || []) as Trip[];
+        set({ myTrips: Array.isArray(trips) ? trips : [], isLoading: false });
 
         // Auto-select active trip
         const activeTrip = trips.find(t => t.status === 'active');

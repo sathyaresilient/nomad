@@ -51,8 +51,11 @@ export const useSafetyStore = create<SafetyState>((set, get) => ({
 
         const result = await SafetyAPI.getContacts();
 
-        if (result.data?.length) {
-            set({ emergencyContacts: result.data as EmergencyContact[], isLoading: false });
+        // API returns { data: contacts[] } or contacts[]
+        const responseData = result.data as any;
+        const contacts = responseData?.data || responseData;
+        if (Array.isArray(contacts) && contacts.length) {
+            set({ emergencyContacts: contacts as EmergencyContact[], isLoading: false });
         } else {
             set({ isLoading: false });
         }

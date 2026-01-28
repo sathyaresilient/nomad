@@ -90,7 +90,10 @@ export const useHousingStore = create<HousingState>((set, get) => ({
             return;
         }
 
-        const listings = result.data?.length ? result.data as HousingListing[] : MOCK_LISTINGS;
+        // API returns { data: listings[], pagination: ... }
+        const responseData = result.data as any;
+        const listingsData = responseData?.data || responseData;
+        const listings = Array.isArray(listingsData) && listingsData.length ? listingsData as HousingListing[] : MOCK_LISTINGS;
         set({ listings, isLoading: false });
     },
 

@@ -88,7 +88,10 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
             return;
         }
 
-        set({ groups: (result.data || MOCK_GROUPS) as Group[], isLoading: false });
+        // API returns { data: groups[], pagination: ... }, so extract the inner data array
+        const responseData = result.data as any;
+        const groups = responseData?.data || responseData || MOCK_GROUPS;
+        set({ groups: Array.isArray(groups) ? groups : MOCK_GROUPS, isLoading: false });
     },
 
     selectGroup: (groupId) => {

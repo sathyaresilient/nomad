@@ -5,9 +5,8 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
 import { Link, router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -25,6 +24,10 @@ import { BorderRadius, Colors, Spacing, Typography } from '../../src/design';
 import { TokenStorage, api } from '../../src/lib/api';
 import { useAuthStore } from '../../src/store/authStore';
 
+// Check if Google OAuth is configured
+const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
+const HAS_GOOGLE_CONFIG = !!GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== 'placeholder';
+
 export default function LoginScreen() {
     const insets = useSafeAreaInsets();
     const { login, isLoading, error, clearError } = useAuthStore();
@@ -35,22 +38,6 @@ export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
     const [googleLoading, setGoogleLoading] = useState(false);
-
-    // Google OAuth
-    const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-        clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-        iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-        androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    });
-
-    // Handle Google response
-    useEffect(() => {
-        if (response?.type === 'success') {
-            handleGoogleToken(response.params.id_token);
-        } else if (response?.type === 'error') {
-            setLocalError('Google sign in failed. Please try again.');
-        }
-    }, [response]);
 
     // Google token exchange
     const handleGoogleToken = async (idToken: string) => {
@@ -207,24 +194,29 @@ export default function LoginScreen() {
 
                 {/* Social Login Buttons */}
                 <View style={styles.socialButtons}>
-                    {/* Google */}
-                    <TouchableOpacity
-                        style={styles.socialButton}
-                        onPress={() => promptAsync()}
-                        disabled={!request || googleLoading}
-                    >
-                        {googleLoading ? (
-                            <ActivityIndicator size="small" color={Colors.text.primary} />
-                        ) : (
-                            <>
-                                <Image
-                                    source={{ uri: 'https://www.google.com/favicon.ico' }}
-                                    style={styles.socialIcon}
-                                />
-                                <Text style={styles.socialButtonText}>Google</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                    {/* Google - only show if configured */}
+                    {HAS_GOOGLE_CONFIG && (
+                        <TouchableOpacity
+                            style={styles.socialButton}
+                            onPress={() => {
+                                // Google OAuth not yet configured
+                                setLocalError('Google sign-in is not configured yet');
+                            }}
+                            disabled={googleLoading}
+                        >
+                            {googleLoading ? (
+                                <ActivityIndicator size="small" color={Colors.text.primary} />
+                            ) : (
+                                <>
+                                    <Image
+                                        source={{ uri: 'https://www.google.com/favicon.ico' }}
+                                        style={styles.socialIcon}
+                                    />
+                                    <Text style={styles.socialButtonText}>Google</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
 
                     {/* Apple (iOS only) */}
                     {Platform.OS === 'ios' && (

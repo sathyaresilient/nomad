@@ -5,9 +5,12 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
 import { Link, router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+
+// Check if Google OAuth is configured
+const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
+const HAS_GOOGLE_CONFIG = !!GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== 'placeholder';
 import {
     ActivityIndicator,
     Image,
@@ -40,22 +43,6 @@ export default function SignupScreen() {
 
     // Password strength
     const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
-
-    // Google OAuth
-    const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-        clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-        iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-        androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    });
-
-    // Handle Google response
-    useEffect(() => {
-        if (response?.type === 'success') {
-            handleGoogleToken(response.params.id_token);
-        } else if (response?.type === 'error') {
-            setLocalError('Google sign up failed. Please try again.');
-        }
-    }, [response]);
 
     // Check password strength
     useEffect(() => {
@@ -202,23 +189,27 @@ export default function SignupScreen() {
 
                 {/* Social Login First */}
                 <View style={styles.socialButtons}>
-                    <TouchableOpacity
-                        style={styles.socialButton}
-                        onPress={() => promptAsync()}
-                        disabled={!request || googleLoading}
-                    >
-                        {googleLoading ? (
-                            <ActivityIndicator size="small" color={Colors.text.primary} />
-                        ) : (
-                            <>
-                                <Image
-                                    source={{ uri: 'https://www.google.com/favicon.ico' }}
-                                    style={styles.socialIcon}
-                                />
-                                <Text style={styles.socialButtonText}>Continue with Google</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                    {HAS_GOOGLE_CONFIG && (
+                        <TouchableOpacity
+                            style={styles.socialButton}
+                            onPress={() => {
+                                setLocalError('Google sign-up is not configured yet');
+                            }}
+                            disabled={googleLoading}
+                        >
+                            {googleLoading ? (
+                                <ActivityIndicator size="small" color={Colors.text.primary} />
+                            ) : (
+                                <>
+                                    <Image
+                                        source={{ uri: 'https://www.google.com/favicon.ico' }}
+                                        style={styles.socialIcon}
+                                    />
+                                    <Text style={styles.socialButtonText}>Continue with Google</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
 
                     {Platform.OS === 'ios' && (
                         <TouchableOpacity

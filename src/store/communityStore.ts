@@ -105,8 +105,11 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
         const result = await EventsAPI.list({ location });
 
-        if (result.data?.length) {
-            set({ events: result.data as Event[], isLoading: false });
+        // API returns { data: events[], pagination: ... }
+        const responseData = result.data as any;
+        const events = responseData?.data || responseData;
+        if (Array.isArray(events) && events.length) {
+            set({ events: events as Event[], isLoading: false });
         } else {
             set({ isLoading: false });
         }
@@ -117,8 +120,11 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
         const result = await ThreadsAPI.list({ category });
 
-        if (result.data?.length) {
-            set({ threads: result.data as Thread[], isLoading: false });
+        // API returns { data: threads[], pagination: ... }
+        const responseData = result.data as any;
+        const threads = responseData?.data || responseData;
+        if (Array.isArray(threads) && threads.length) {
+            set({ threads: threads as Thread[], isLoading: false });
         } else {
             set({ isLoading: false });
         }

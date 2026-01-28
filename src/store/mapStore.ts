@@ -93,8 +93,11 @@ export const useMapStore = create<MapState>((set, get) => ({
 
         const result = await LocationsAPI.getNearby(latitude, longitude, 10);
 
-        if (result.data?.length) {
-            set({ pins: result.data as MapPin[], isLoading: false });
+        // API returns { data: pins[] } or pins[]
+        const responseData = result.data as any;
+        const pins = responseData?.data || responseData;
+        if (Array.isArray(pins) && pins.length) {
+            set({ pins: pins as MapPin[], isLoading: false });
         } else {
             set({ isLoading: false });
         }
