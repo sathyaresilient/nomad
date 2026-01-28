@@ -10,7 +10,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["auth", "social", "travel", "chat", "public"]
+  schemas  = ["app_auth", "social", "travel", "chat", "public"]
 }
 
 // =====================================================
@@ -69,7 +69,7 @@ model User {
   feedbackReceived      Feedback[]      @relation("FeedbackTo")
 
   @@map("users")
-  @@schema("auth")
+  @@schema("app_auth")
 }
 
 model UserSession {
@@ -88,7 +88,7 @@ model UserSession {
   @@index([userId])
   @@index([refreshTokenHash])
   @@map("user_sessions")
-  @@schema("auth")
+  @@schema("app_auth")
 }
 
 // =====================================================
