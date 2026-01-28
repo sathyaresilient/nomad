@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryPill } from '../../src/components/community/CategoryPill';
 import { EventCard } from '../../src/components/community/EventCard';
 import { Colors } from '../../src/design/colors';
@@ -10,6 +11,7 @@ import { useCommunityStore } from '../../src/store/communityStore';
 export default function CommunityScreen() {
     const router = useRouter();
     const { events, categories, selectEvent } = useCommunityStore();
+    const insets = useSafeAreaInsets();
     const [activeCategory, setActiveCategory] = React.useState('All');
 
     // Filter events by category
@@ -23,7 +25,7 @@ export default function CommunityScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
             <View style={styles.header}>
                 <Text style={styles.title}>Community Hub</Text>
                 <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/events/create')}>
@@ -60,7 +62,7 @@ export default function CommunityScreen() {
                 )}
                 contentContainerStyle={styles.feedContent}
             />
-        </SafeAreaView>
+        </View>
     );
 }
 

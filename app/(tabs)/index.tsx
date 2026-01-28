@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
+  View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActivityFeedItem } from '../../src/components/home/ActivityFeedItem';
 import { HomeHeader } from '../../src/components/home/HomeHeader';
 import { OnlineUsersRow } from '../../src/components/home/OnlineUsersRow';
@@ -22,10 +23,12 @@ export default function DiscoverScreen() {
     }
   }, [user]);
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
         <HomeHeader />
@@ -37,7 +40,7 @@ export default function DiscoverScreen() {
         <ActivityFeedItem />
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -47,6 +50,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
   },
   content: {
-    paddingBottom: 100, // Safe space for tab bar
   },
 });

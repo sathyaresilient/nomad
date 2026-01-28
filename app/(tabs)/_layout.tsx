@@ -6,15 +6,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { Colors, Layout } from '../../src/design';
+import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '../../src/design';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { paddingBottom: Math.max(insets.bottom, 8), height: 56 + Math.max(insets.bottom, 8) }],
         tabBarActiveTintColor: Colors.primary.main,
         tabBarInactiveTintColor: Colors.text.muted,
         tabBarLabelStyle: styles.tabBarLabel,
@@ -68,7 +71,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="community"
         options={{
-          title: 'Community',
+          title: 'Social',
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
               <Ionicons name="people-outline" size={24} color={color} />
@@ -96,11 +99,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.primary,
     borderTopWidth: 1,
     borderTopColor: Colors.border.light,
-    height: Layout.tabBarHeight,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    paddingTop: 8,
-    elevation: 0,
-    shadowOpacity: 0,
+    paddingTop: 6,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   tabBarLabel: {
     fontSize: 11,

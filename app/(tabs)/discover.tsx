@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Dimensions, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TravelerMatchCard } from '../../src/components/discovery/TravelerMatchCard';
 import { mockUsers } from '../../src/data/mockUsers';
 
@@ -13,9 +14,10 @@ const FILTER_CHIPS = [
 ];
 
 export default function DiscoverFeedScreen() {
+    const insets = useSafeAreaInsets();
     return (
         <View style={styles.container}>
-            <SafeAreaView style={{ flex: 1 }}>
+            <View style={[{ flex: 1 }, { paddingTop: insets.top }]}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
@@ -96,7 +98,7 @@ export default function DiscoverFeedScreen() {
                     </View>
 
                 </ScrollView>
-            </SafeAreaView>
+            </View>
         </View>
     );
 }
