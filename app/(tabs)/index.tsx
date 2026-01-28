@@ -1,31 +1,52 @@
-import { StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { ActivityFeedItem } from '../../src/components/home/ActivityFeedItem';
+import { HomeHeader } from '../../src/components/home/HomeHeader';
+import { OnlineUsersRow } from '../../src/components/home/OnlineUsersRow';
+import { PulseHeroCard } from '../../src/components/home/PulseHeroCard';
+import { useAuthStore, useTripStore } from '../../src/store';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function DiscoverScreen() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const { loadMyTrips } = useTripStore();
 
-export default function TabOneScreen() {
+  useEffect(() => {
+    if (user) {
+      loadMyTrips();
+    }
+  }, [user]);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <HomeHeader />
+
+        <OnlineUsersRow />
+
+        <PulseHeroCard />
+
+        <ActivityFeedItem />
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#FFF',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  content: {
+    paddingBottom: 100, // Safe space for tab bar
   },
 });

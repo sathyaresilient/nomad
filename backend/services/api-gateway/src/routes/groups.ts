@@ -416,4 +416,182 @@ export async function groupsRoutes(
 
         reply.send({ success: true, action: 'added' });
     });
+
+    /**
+     * GET /:groupId/posts/:postId/comments
+     * Get comments for a post
+     */
+    fastify.get('/:groupId/posts/:postId/comments', { preHandler: optionalAuth }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const { postId } = request.params as { groupId: string; postId: string };
+        const { limit = 20, offset = 0 } = request.query as { limit?: number; offset?: number };
+
+        const [comments, total] = await Promise.all([
+            prisma.comment.findMany({
+                where: {
+                    postId,
+                    deletedAt: null,
+                    parentId: null, // Only top-level comments
+                },
+                include: {
+                    author: {
+                        select: {
+                            id: true,
+                            displayName: true,
+                            avatarUrl: true,
+                        },
+                    },
+                    replies: {
+                        where: { deletedAt: null },
+                        include: {
+                            author: {
+                                select: {
+                                    id: true,
+                                    displayName: true,
+                                    avatarUrl: true,
+                                },
+                            },
+                        },
+                        orderBy: { createdAt: 'asc' },
+                        take: 3,
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+                take: Number(limit),
+                skip: Number(offset),
+            }),
+            prisma.comment.count({
+                where: {
+                    postId,
+                    deletedAt: null,
+                    parentId: null,
+                },
+            }),
+        ]);
+
+        reply.send({
+            data: comments,
+            pagination: {
+                total,
+                limit: Number(limit),
+                offset: Number(offset),
+                hasMore: Number(offset) + comments.length < total,
+            },
+        });
+    });
+
+    /**
+     * POST /:groupId/posts/:postId/comments
+     * Create a comment on a post
+     */
+    fastify.post('/:groupId/posts/:postId/comments', { preHandler: authenticate }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = (request as any).user.userId;
+        const { postId } = request.params as { groupId: string; postId: string };
+        const { content, parentId } = request.body as { content: string; parentId?: string };
+
+        if (!content || content.trim().length === 0) {
+            return reply.status(400).send({ error: 'Content is required' });
+        }
+
+        // Verify post exists
+        const post = await prisma.post.findUnique({
+            where: { id: postId },
+        });
+
+        if (!post || post.deletedAt) {
+            return reply.status(404).send({ error: 'Post not found' });
+        }
+
+        // If it's a reply, verify parent comment exists
+        if (parentId) {
+            const parentComment = await prisma.comment.findUnique({
+                where: { id: parentId },
+            });
+            if (!parentComment || parentComment.deletedAt) {
+                return reply.status(404).send({ error: 'Parent comment not found' });
+            }
+        }
+
+        const comment = await prisma.$transaction(async (tx) => {
+            const newComment = await tx.comment.create({
+                data: {
+                    postId,
+                    authorId: userId,
+                    parentId,
+                    content: content.trim(),
+                },
+                include: {
+                    author: {
+                        select: {
+                            id: true,
+                            displayName: true,
+                            avatarUrl: true,
+                        },
+                    },
+                },
+            });
+
+            // Update comment count on post
+            await tx.post.update({
+                where: { id: postId },
+                data: { commentCount: { increment: 1 } },
+            });
+
+            // Update reply count on parent comment if it's a reply
+            if (parentId) {
+                await tx.comment.update({
+                    where: { id: parentId },
+                    data: { replyCount: { increment: 1 } },
+                });
+            }
+
+            return newComment;
+        });
+
+        reply.status(201).send({ comment });
+    });
+
+    /**
+     * DELETE /:groupId/posts/:postId/comments/:commentId
+     * Delete a comment
+     */
+    fastify.delete('/:groupId/posts/:postId/comments/:commentId', { preHandler: authenticate }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = (request as any).user.userId;
+        const { postId, commentId } = request.params as { groupId: string; postId: string; commentId: string };
+
+        const comment = await prisma.comment.findUnique({
+            where: { id: commentId },
+        });
+
+        if (!comment || comment.deletedAt) {
+            return reply.status(404).send({ error: 'Comment not found' });
+        }
+
+        if (comment.authorId !== userId) {
+            return reply.status(403).send({ error: 'Not authorized to delete this comment' });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            // Soft delete the comment
+            await tx.comment.update({
+                where: { id: commentId },
+                data: { deletedAt: new Date() },
+            });
+
+            // Update comment count on post
+            await tx.post.update({
+                where: { id: postId },
+                data: { commentCount: { decrement: 1 } },
+            });
+
+            // Update reply count on parent if it's a reply
+            if (comment.parentId) {
+                await tx.comment.update({
+                    where: { id: comment.parentId },
+                    data: { replyCount: { decrement: 1 } },
+                });
+            }
+        });
+
+        reply.send({ success: true });
+    });
 }

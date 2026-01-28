@@ -35,6 +35,7 @@ import searchRoutes from './routes/search.js';
 import { tripsRoutes } from './routes/trips.js';
 import { usersRoutes } from './routes/users.js';
 import { verificationRoutes } from './routes/verification.js';
+import feedbackRoutes from './routes/feedback.js';
 
 // Initialize Sentry first
 initSentry();
@@ -265,6 +266,7 @@ async function registerRoutes() {
     await app.register(mediaRoutes, { prefix: '/api/v1/media' });
     await app.register(searchRoutes, { prefix: '/api/v1/search' });
     await app.register(notificationRoutes, { prefix: '/api/v1/notifications' });
+    await app.register(feedbackRoutes, { prefix: '/api/v1/feedback' });
     await app.register(friendsRoutes);
 
     // Phase 11 routes
