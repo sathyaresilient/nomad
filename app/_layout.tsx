@@ -3,6 +3,7 @@
  * App-wide providers and navigation setup - Light Theme
  */
 
+import { Ionicons } from '@expo/vector-icons';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -45,6 +46,7 @@ const NomadlyTheme = {
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    ...Ionicons.font,
   });
 
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();

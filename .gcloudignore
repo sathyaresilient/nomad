@@ -1,0 +1,9 @@
+# Only ignore top-level node_modules, not inside dist
+/node_modules/
+.expo/
+.git/
+backend/
+ios/
+android/
+src/
+app/
