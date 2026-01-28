@@ -171,14 +171,84 @@ async function registerRoutes() {
     // Health check (no auth)
     await app.register(healthRoutes, { prefix: '/health' });
 
-    // Root route (Fix for 404)
+    // Root route - HTML landing page
     app.get('/', async (request, reply) => {
-        return {
-            name: 'Nomadly API Gateway',
-            status: 'running',
-            serverTime: new Date().toISOString(),
-            docs: '/docs'
-        };
+        reply.type('text/html').send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nomadly API</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        h1 { font-size: 3rem; margin-bottom: 0.5rem; }
+        .subtitle { font-size: 1.25rem; opacity: 0.9; margin-bottom: 2rem; }
+        .status {
+            background: rgba(255,255,255,0.2);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4ade80;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .links { margin-top: 2rem; }
+        .links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border: 2px solid white;
+            border-radius: 8px;
+            margin: 0 0.5rem;
+            transition: all 0.3s;
+        }
+        .links a:hover {
+            background: white;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nomadly</h1>
+        <p class="subtitle">Connect with travelers worldwide</p>
+        <div class="status">
+            <span class="status-dot"></span>
+            API Running
+        </div>
+        <div class="links">
+            <a href="/docs">API Documentation</a>
+            <a href="/health">Health Check</a>
+        </div>
+    </div>
+</body>
+</html>
+        `);
     });
 
     // Auth routes (no auth required)
