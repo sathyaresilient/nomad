@@ -8,7 +8,7 @@ import { Trip as APITrip, TripsAPI } from '../lib/api';
 import type { TravelerMatch } from '../types';
 
 // Use the API Trip type for consistency with backend responses
-type Trip = APITrip;
+export type Trip = APITrip;
 
 interface TripState {
     myTrips: Trip[];

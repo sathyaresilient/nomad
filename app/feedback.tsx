@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    Alert,
     Image,
     SafeAreaView,
     StyleSheet,
@@ -15,6 +16,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { api } from '../src/lib/api';
 import { BorderRadius, Colors, Layout, Spacing, Typography } from '../src/design';
 
 export default function FeedbackScreen() {
@@ -29,9 +31,22 @@ export default function FeedbackScreen() {
         { id: 'pushy', label: 'Pushy', emoji: '😤' },
     ];
 
-    const handleSubmit = () => {
-        // Submit feedback logic
-        router.back();
+    const handleSubmit = async () => {
+        try {
+            await api.post('/api/v1/feedback', {
+                toUserId: 'mock-user-2',
+                wouldTravelAgain: wouldTravelAgain ?? true,
+                vibeRating: vibe === 'awesome' ? 'great' : vibe === 'chill' ? 'good' : 'okay',
+                anonymousNote: note,
+            });
+        } catch (e) {
+            // ignore
+        }
+        Alert.alert(
+            'Review Submitted',
+            'Thank you for submitting your feedback! Your review helps build trust in our community.',
+            [{ text: 'Done', onPress: () => router.back() }]
+        );
     };
 
     return (

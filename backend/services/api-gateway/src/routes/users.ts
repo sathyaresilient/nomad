@@ -5,6 +5,7 @@
 
 import { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
 import { prisma } from '../lib/prisma.js';
+import { redis } from '../lib/redis.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 
 export async function usersRoutes(
@@ -98,6 +99,164 @@ export async function usersRoutes(
         });
 
         reply.send({ user });
+    });
+
+    /**
+     * DELETE /me
+     * Delete current user account and revoke active sessions
+     */
+    fastify.delete('/me', { preHandler: authenticate }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = (request as any).user.userId;
+
+        // Revoke all active sessions
+        await prisma.userSession.updateMany({
+            where: { userId },
+            data: { revokedAt: new Date() },
+        });
+
+        // Delete user (cascade removes sessions, trips, etc.)
+        await prisma.user.delete({
+            where: { id: userId },
+        });
+
+        reply.send({ success: true, message: 'Account deleted successfully' });
+    });
+
+    /**
+     * POST /:id/report
+     * Report an abusive user or objectionable content (Apple Guideline 1.2)
+     */
+    fastify.post('/:id/report', { preHandler: authenticate }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const reporterId = (request as any).user.userId;
+        const { id: targetUserId } = request.params as { id: string };
+        const { reason, details } = (request.body as { reason?: string; details?: string }) || {};
+
+        if (!reason) {
+            return reply.status(400).send({ error: 'Reason is required' });
+        }
+
+        const reportId = `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const reportData = JSON.stringify({
+            id: reportId,
+            reporterId,
+            targetUserId,
+            reason,
+            details: details || '',
+            createdAt: new Date().toISOString(),
+            status: 'pending',
+        });
+
+        // 1. Fast distributed cache in Redis (30 days)
+        try {
+            await redis.setex(`report:${reportId}`, 60 * 60 * 24 * 30, reportData);
+            await redis.sadd('reports:all', reportId);
+            await redis.sadd(`reports:user:${targetUserId}`, reportId);
+        } catch (rErr) {
+            fastify.log.warn({ rErr }, 'Redis cache failed for report');
+        }
+
+        // 2. Permanent storage in PostgreSQL (Survives Redis flushes & restarts)
+        try {
+            await prisma.feedback.create({
+                data: {
+                    fromUserId: reporterId,
+                    toUserId: targetUserId,
+                    vibeRating: 'REPORT',
+                    wouldTravelAgain: false,
+                    anonymousNote: JSON.stringify({
+                        reportId,
+                        reason,
+                        details: details || '',
+                        status: 'pending',
+                    }),
+                },
+            });
+        } catch (dbErr) {
+            fastify.log.warn({ dbErr }, 'PostgreSQL feedback persist failed for report');
+        }
+
+        fastify.log.info({ reportId, reporterId, targetUserId, reason }, 'User report submitted');
+
+        reply.status(201).send({
+            success: true,
+            reportId,
+            message: 'Report submitted successfully. Our safety team will review it within 24 hours.',
+        });
+    });
+
+    /**
+     * POST /:id/block
+     * Block an abusive user (Apple Guideline 1.2) - Persisted in PostgreSQL
+     */
+    fastify.post('/:id/block', { preHandler: authenticate }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const currentUserId = (request as any).user.userId;
+        const { id: targetUserId } = request.params as { id: string };
+
+        if (currentUserId === targetUserId) {
+            return reply.status(400).send({ error: 'Cannot block yourself' });
+        }
+
+        // Cache in Redis for quick access
+        await redis.sadd(`blocked:${currentUserId}`, targetUserId);
+
+        // Delete inverse connection if any
+        await prisma.connection.deleteMany({
+            where: { fromUserId: targetUserId, toUserId: currentUserId },
+        });
+
+        // Upsert block record in PostgreSQL
+        await prisma.connection.upsert({
+            where: {
+                fromUserId_toUserId: { fromUserId: currentUserId, toUserId: targetUserId },
+            },
+            create: {
+                fromUserId: currentUserId,
+                toUserId: targetUserId,
+                status: 'blocked',
+            },
+            update: {
+                status: 'blocked',
+            },
+        });
+
+        reply.send({ success: true, message: 'User blocked successfully' });
+    });
+
+    /**
+     * DELETE /:id/block
+     * Unblock a user
+     */
+    fastify.delete('/:id/block', { preHandler: authenticate }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const currentUserId = (request as any).user.userId;
+        const { id: targetUserId } = request.params as { id: string };
+
+        await redis.srem(`blocked:${currentUserId}`, targetUserId);
+
+        await prisma.connection.deleteMany({
+            where: {
+                fromUserId: currentUserId,
+                toUserId: targetUserId,
+                status: 'blocked',
+            },
+        });
+
+        reply.send({ success: true, message: 'User unblocked successfully' });
+    });
+
+    /**
+     * GET /me/blocked
+     * Get list of blocked user IDs from PostgreSQL
+     */
+    fastify.get('/me/blocked', { preHandler: authenticate }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const currentUserId = (request as any).user.userId;
+
+        const blockedConnections = await prisma.connection.findMany({
+            where: { fromUserId: currentUserId, status: 'blocked' },
+            select: { toUserId: true },
+        });
+
+        const blockedUserIds = blockedConnections.map((c) => c.toUserId);
+        reply.send({ data: blockedUserIds });
     });
 
     /**

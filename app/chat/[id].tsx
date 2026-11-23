@@ -1,9 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Image, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActionSheetIOS,
+    Alert,
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { MessageBubble } from '../../src/components/chat/MessageBubble';
 import { Colors } from '../../src/design/colors';
+import { ModerationAPI } from '../../src/lib/api';
 import { useAuthStore } from '../../src/store';
 import { useChatStore } from '../../src/store/chatStore';
 
@@ -29,7 +43,80 @@ export default function ChatRoomScreen() {
         if (!inputText.trim() || !user) return;
         sendMessage(id as string, inputText.trim(), user.id);
         setInputText('');
-        // Scroll to bottom
+    };
+
+    const handleReport = (reason: string) => {
+        if (!conversation) return;
+        ModerationAPI.reportUser(conversation.otherUser.id, reason, `Chat room ${id}`);
+        Alert.alert(
+            'Report Received',
+            'Thank you for reporting. Our safety team reviews all flagged conversations within 24 hours to keep the community safe.',
+            [{ text: 'OK' }]
+        );
+    };
+
+    const showReportReasons = () => {
+        Alert.alert(
+            'Report Conversation',
+            'Please select the reason for reporting this conversation:',
+            [
+                { text: 'Harassment or Threats', onPress: () => handleReport('Harassment') },
+                { text: 'Inappropriate or Explicit Content', onPress: () => handleReport('Inappropriate Content') },
+                { text: 'Spam, Links, or Fraud', onPress: () => handleReport('Spam or Scam') },
+                { text: 'Hate Speech', onPress: () => handleReport('Hate Speech') },
+                { text: 'Cancel', style: 'cancel' },
+            ]
+        );
+    };
+
+    const handleBlock = () => {
+        if (!conversation) return;
+        Alert.alert(
+            `Block ${conversation.otherUser.displayName}?`,
+            'You will no longer receive messages from this user, and this conversation will be closed.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Block User',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await ModerationAPI.blockUser(conversation.otherUser.id);
+                        Alert.alert('User Blocked', `${conversation.otherUser.displayName} has been blocked.`);
+                        router.back();
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleSafetyMenu = () => {
+        if (!conversation) return;
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options: ['Cancel', 'Report Conversation', 'Block User'],
+                    destructiveButtonIndex: 2,
+                    cancelButtonIndex: 0,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 1) {
+                        showReportReasons();
+                    } else if (buttonIndex === 2) {
+                        handleBlock();
+                    }
+                }
+            );
+        } else {
+            Alert.alert(
+                'Chat Options',
+                `Safety actions for ${conversation.otherUser.displayName}`,
+                [
+                    { text: 'Report Conversation', onPress: showReportReasons },
+                    { text: 'Block User', style: 'destructive', onPress: handleBlock },
+                    { text: 'Cancel', style: 'cancel' },
+                ]
+            );
+        }
     };
 
     if (!conversation) return null; // Or loading/error
@@ -50,7 +137,7 @@ export default function ChatRoomScreen() {
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.moreBtn}>
+                <TouchableOpacity style={styles.moreBtn} onPress={handleSafetyMenu}>
                     <Ionicons name="ellipsis-horizontal" size={24} color={Colors.text.primary} />
                 </TouchableOpacity>
             </View>

@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    Alert,
     Dimensions,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -15,25 +15,64 @@ import {
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocialVibe, SocialVibeSelector } from '../../src/components/trips/SocialVibeSelector';
+import { useTripStore } from '../../src/store/tripStore';
+import { analytics, ANALYTICS_EVENTS } from '../../src/lib/analytics';
 
 const { width } = Dimensions.get('window');
 
 export default function CreateTripScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
+    const { createTrip } = useTripStore();
     const [destination, setDestination] = useState('');
     const [arrivalDate, setArrivalDate] = useState('');
     const [departureDate, setDepartureDate] = useState('');
     const [socialVibe, setSocialVibe] = useState<SocialVibe>('meetups');
     const [goal, setGoal] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleSave = () => {
-        // Just mock navigation for now
+    const handleSave = async () => {
+        if (!destination.trim()) {
+            Alert.alert('Missing Destination', 'Please enter a destination city or country.');
+            return;
+        }
+
+        const parts = destination.split(',').map(p => p.trim());
+        const city = parts[0] || 'Unknown';
+        const country = parts[1] || parts[0];
+
+        const now = new Date();
+        const start = arrivalDate ? new Date(arrivalDate) : new Date(now.getTime() + 7 * 86400000);
+        const end = departureDate ? new Date(departureDate) : new Date(start.getTime() + 7 * 86400000);
+
+        setIsSaving(true);
+        try {
+            await createTrip({
+                city,
+                country,
+                startDate: start.toISOString(),
+                endDate: end.toISOString(),
+                status: 'planning',
+                openTo: [socialVibe],
+                notes: goal,
+            } as any);
+            analytics.track(ANALYTICS_EVENTS.TRIP_CREATED, {
+                city,
+                country,
+                socialVibe,
+                durationDays: Math.round((end.getTime() - start.getTime()) / 86400000),
+            });
+        } catch (e) {
+            // ignore
+        }
+        setIsSaving(false);
         router.back();
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -123,7 +162,7 @@ export default function CreateTripScreen() {
                         </ScrollView>
 
                         {/* Footer Button */}
-                        <View style={styles.footer}>
+                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
                             <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
                                 <Text style={styles.submitButtonText}>Announce Trip</Text>
                                 <Ionicons name="send" size={16} color="#FFF" style={{ marginLeft: 6 }} />
@@ -132,7 +171,7 @@ export default function CreateTripScreen() {
                     </View>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 }
 

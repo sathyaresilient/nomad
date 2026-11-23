@@ -124,9 +124,7 @@ export default function LoginScreen() {
             >
                 {/* Logo & Header */}
                 <View style={styles.header}>
-                    <View style={styles.logoContainer}>
-                        <Text style={styles.logoEmoji}>🌍</Text>
-                    </View>
+                    <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
                     <Text style={styles.title}>Welcome back</Text>
                     <Text style={styles.subtitle}>Sign in to continue your adventures</Text>
                 </View>
@@ -220,13 +218,13 @@ export default function LoginScreen() {
 
                     {/* Apple (iOS only) */}
                     {Platform.OS === 'ios' && (
-                        <TouchableOpacity
-                            style={[styles.socialButton, styles.appleButton]}
+                        <AppleAuthentication.AppleAuthenticationButton
+                            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                            cornerRadius={8}
+                            style={styles.appleButton}
                             onPress={handleAppleSignIn}
-                        >
-                            <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-                            <Text style={[styles.socialButtonText, styles.appleButtonText]}>Apple</Text>
-                        </TouchableOpacity>
+                        />
                     )}
                 </View>
 
@@ -257,17 +255,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: Spacing.xxl,
     },
-    logoContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: Colors.tag.teal,
-        justifyContent: 'center',
-        alignItems: 'center',
+    logo: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         marginBottom: Spacing.lg,
-    },
-    logoEmoji: {
-        fontSize: 40,
     },
     title: {
         ...Typography.h1,
@@ -346,11 +338,8 @@ const styles = StyleSheet.create({
         color: Colors.text.primary,
     },
     appleButton: {
-        backgroundColor: '#000000',
-        borderColor: '#000000',
-    },
-    appleButtonText: {
-        color: '#FFFFFF',
+        width: '100%',
+        height: 48,
     },
     footer: {
         flexDirection: 'row',

@@ -93,7 +93,7 @@ const TripPhotoCard = ({ trip, isActive }: { trip: Trip; isActive?: boolean }) =
                         </View>
                     </View>
                 </View>
-                <TouchableOpacity style={styles.viewMatchesButton}>
+                <TouchableOpacity style={styles.viewMatchesButton} onPress={() => router.push(`/trips/${trip.id}`)}>
                     <Text style={styles.viewMatchesText}>View Matches</Text>
                     <Ionicons name="chevron-forward" size={16} color={Colors.text.inverse} />
                 </TouchableOpacity>
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     contentInner: {
         paddingHorizontal: Layout.screenPadding,
         paddingTop: Spacing.lg,
-        paddingBottom: Spacing['3xl'],
+        paddingBottom: 80,
     },
     section: {
         marginBottom: Spacing.xl,

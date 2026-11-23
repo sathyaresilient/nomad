@@ -25,7 +25,7 @@ export const PulseHeroCard = () => {
                         <View style={styles.cardHeader}>
                             <View style={styles.creatorTag}>
                                 <Image
-                                    source={{ uri: 'https://i.pravatar.cc/150?u=sarah' }}
+                                    source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face' }}
                                     style={styles.miniAvatar}
                                 />
                                 <View>
@@ -55,8 +55,8 @@ export const PulseHeroCard = () => {
 
                             <View style={styles.footerRow}>
                                 <View style={styles.attendees}>
-                                    <Image source={{ uri: 'https://i.pravatar.cc/150?u=mark' }} style={[styles.attendeeAvatar, { zIndex: 3 }]} />
-                                    <Image source={{ uri: 'https://i.pravatar.cc/150?u=jonas' }} style={[styles.attendeeAvatar, { marginLeft: -12, zIndex: 2 }]} />
+                                    <Image source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' }} style={[styles.attendeeAvatar, { zIndex: 3 }]} />
+                                    <Image source={{ uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face' }} style={[styles.attendeeAvatar, { marginLeft: -12, zIndex: 2 }]} />
                                     <View style={[styles.attendeeAvatar, styles.moreAttendees, { marginLeft: -12, zIndex: 1 }]}>
                                         <Text style={styles.moreText}>+2</Text>
                                     </View>

@@ -4,10 +4,15 @@
  */
 
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
 import { v4 as uuid } from 'uuid';
 import { prisma } from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+
+function hashRefreshToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 export async function authRoutes(
     fastify: FastifyInstance,
@@ -59,7 +64,7 @@ export async function authRoutes(
         );
 
         const refreshToken = uuid();
-        const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+        const refreshTokenHash = hashRefreshToken(refreshToken);
 
         await prisma.userSession.create({
             data: {
@@ -124,7 +129,7 @@ export async function authRoutes(
         );
 
         const refreshToken = uuid();
-        const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+        const refreshTokenHash = hashRefreshToken(refreshToken);
 
         await prisma.userSession.create({
             data: {
@@ -166,9 +171,12 @@ export async function authRoutes(
             return reply.status(400).send({ error: 'refreshToken is required' });
         }
 
-        // Find valid session
-        const sessions = await prisma.userSession.findMany({
+        const hashed = hashRefreshToken(refreshToken);
+
+        // 1. Instant O(1) indexed lookup by SHA-256 hash
+        let validSession = await prisma.userSession.findFirst({
             where: {
+                refreshTokenHash: hashed,
                 expiresAt: { gt: new Date() },
                 revokedAt: null,
             },
@@ -177,11 +185,25 @@ export async function authRoutes(
             },
         });
 
-        let validSession = null;
-        for (const session of sessions) {
-            if (await bcrypt.compare(refreshToken, session.refreshTokenHash)) {
-                validSession = session;
-                break;
+        // 2. Legacy fallback for sessions created with bcrypt
+        if (!validSession) {
+            const legacySessions = await prisma.userSession.findMany({
+                where: {
+                    expiresAt: { gt: new Date() },
+                    revokedAt: null,
+                    refreshTokenHash: { startsWith: '$2' },
+                },
+                include: {
+                    user: true,
+                },
+                take: 10,
+            });
+
+            for (const session of legacySessions) {
+                if (await bcrypt.compare(refreshToken, session.refreshTokenHash)) {
+                    validSession = session;
+                    break;
+                }
             }
         }
 
@@ -210,21 +232,34 @@ export async function authRoutes(
         const { refreshToken } = request.body as { refreshToken?: string };
 
         if (refreshToken) {
-            // Revoke specific session
-            const sessions = await prisma.userSession.findMany({
+            const hashed = hashRefreshToken(refreshToken);
+            const revoked = await prisma.userSession.updateMany({
                 where: {
                     userId,
+                    refreshTokenHash: hashed,
                     revokedAt: null,
                 },
+                data: { revokedAt: new Date() },
             });
 
-            for (const session of sessions) {
-                if (await bcrypt.compare(refreshToken, session.refreshTokenHash)) {
-                    await prisma.userSession.update({
-                        where: { id: session.id },
-                        data: { revokedAt: new Date() },
-                    });
-                    break;
+            if (revoked.count === 0) {
+                // Check legacy bcrypt sessions
+                const legacySessions = await prisma.userSession.findMany({
+                    where: {
+                        userId,
+                        revokedAt: null,
+                        refreshTokenHash: { startsWith: '$2' },
+                    },
+                });
+
+                for (const session of legacySessions) {
+                    if (await bcrypt.compare(refreshToken, session.refreshTokenHash)) {
+                        await prisma.userSession.update({
+                            where: { id: session.id },
+                            data: { revokedAt: new Date() },
+                        });
+                        break;
+                    }
                 }
             }
         } else {

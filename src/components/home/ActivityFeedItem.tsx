@@ -10,7 +10,7 @@ export const ActivityFeedItem = () => {
             <View style={styles.header}>
                 <View style={styles.userInfo}>
                     <View>
-                        <Image source={{ uri: 'https://i.pravatar.cc/150?u=mark' }} style={styles.avatar} />
+                        <Image source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' }} style={styles.avatar} />
                         <View style={styles.onlineDot} />
                     </View>
                     <View>

@@ -3,14 +3,14 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../design/colors';
 
-// Mock Data
+// Demo data with consistent, realistic avatars
 const ONLINE_USERS = [
-    { id: 'sarah-chen', name: 'Sarah', image: 'https://i.pravatar.cc/150?u=sarah' },
-    { id: '2', name: 'Mark', image: 'https://i.pravatar.cc/150?u=mark' },
-    { id: '3', name: 'Elaine', image: 'https://i.pravatar.cc/150?u=elaine' },
-    { id: '4', name: 'Jonas', image: 'https://i.pravatar.cc/150?u=jonas' },
-    { id: '5', name: 'Mike', image: 'https://i.pravatar.cc/150?u=mike' },
-    { id: '6', name: 'Alina', image: 'https://i.pravatar.cc/150?u=alina' },
+    { id: '1', name: 'Sarah', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face' },
+    { id: '2', name: 'Mark', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' },
+    { id: '3', name: 'Elaine', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face' },
+    { id: '4', name: 'Jonas', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face' },
+    { id: '5', name: 'Priya', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face' },
+    { id: '6', name: 'Carlos', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face' },
 ];
 
 export const OnlineUsersRow = () => {
@@ -23,7 +23,7 @@ export const OnlineUsersRow = () => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>ONLINE IN CANGGU ({ONLINE_USERS.length})</Text>
+                <Text style={styles.title}>TRAVELERS NEARBY ({ONLINE_USERS.length})</Text>
                 <TouchableOpacity onPress={() => router.push('/discover')}>
                     <Text style={styles.viewAll}>View All</Text>
                 </TouchableOpacity>
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     viewAll: {
         fontSize: 12,
         fontWeight: '700',
-        color: Colors.primary.main, // Pinkish red from design or primary teal
+        color: Colors.primary.main,
     },
     scrollContent: {
         paddingHorizontal: 20,
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         padding: 3,
         borderWidth: 2,
-        borderColor: '#FCA5A5', // Light pink border like design
+        borderColor: '#FCA5A5',
         borderRadius: 36,
     },
     avatar: {
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
         width: 14,
         height: 14,
         borderRadius: 7,
-        backgroundColor: '#22D3EE', // Cyan indicator
+        backgroundColor: '#22C55E',
         borderWidth: 2,
         borderColor: '#FFF',
     },

@@ -379,8 +379,41 @@ export const UsersAPI = {
         return api.patch<{ user: any }>(`/api/v1/users/${id}`, updates);
     },
 
+    updateMe(updates: any) {
+        return api.patch<{ user: any }>('/api/v1/users/me', updates);
+    },
+
+    deleteMe() {
+        return api.delete<{ success: boolean }>('/api/v1/users/me');
+    },
+
     getTrustScore(id: string) {
         return api.get<any>(`/api/v1/users/${id}/trust-score`);
+    },
+};
+
+// ============================================================
+// Moderation & Safety API (UGC Compliance)
+// ============================================================
+
+export const ModerationAPI = {
+    reportUser(userId: string, reason: string, details?: string) {
+        return api.post<{ success: boolean; message: string }>(`/api/v1/users/${userId}/report`, {
+            reason,
+            details,
+        });
+    },
+
+    blockUser(userId: string) {
+        return api.post<{ success: boolean; message: string }>(`/api/v1/users/${userId}/block`, {});
+    },
+
+    unblockUser(userId: string) {
+        return api.delete<{ success: boolean; message: string }>(`/api/v1/users/${userId}/block`);
+    },
+
+    getBlockedUsers() {
+        return api.get<{ data: string[] }>('/api/v1/users/me/blocked');
     },
 };
 

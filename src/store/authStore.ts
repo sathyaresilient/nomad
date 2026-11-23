@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import { AuthAPI, TokenStorage } from '../lib/api';
+import { analytics, ANALYTICS_EVENTS } from '../lib/analytics';
 import type { AuthUser } from '../types';
 
 interface AuthState {
@@ -39,12 +40,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         if (result.data) {
+            const user = result.data.user as AuthUser;
             set({
-                user: result.data.user as AuthUser,
+                user,
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
             });
+            analytics.identify(user.id, { email: user.email, name: user.displayName });
+            analytics.track(ANALYTICS_EVENTS.USER_LOGGED_IN, { provider: 'email' });
             return true;
         }
 
@@ -63,12 +67,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         if (result.data) {
+            const user = result.data.user as AuthUser;
             set({
-                user: result.data.user as AuthUser,
+                user,
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
             });
+            analytics.identify(user.id, { email: user.email, name: user.displayName });
+            analytics.track(ANALYTICS_EVENTS.USER_LOGGED_IN, { provider: 'email' });
             return true;
         }
 
@@ -78,6 +85,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     logout: async () => {
         set({ isLoading: true });
+        analytics.track(ANALYTICS_EVENTS.USER_LOGGED_OUT);
+        analytics.reset();
         await AuthAPI.logout();
         set({
             user: null,
@@ -98,11 +107,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const result = await AuthAPI.getMe();
 
         if (result.data?.user) {
+            const user = result.data.user as AuthUser;
             set({
-                user: result.data.user as AuthUser,
+                user,
                 isAuthenticated: true,
                 isLoading: false,
             });
+            analytics.identify(user.id, { email: user.email, name: user.displayName });
         } else {
             // Token invalid, clear it
             await TokenStorage.clearTokens();

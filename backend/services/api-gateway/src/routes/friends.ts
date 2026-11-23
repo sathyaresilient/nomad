@@ -162,7 +162,7 @@ export async function friendsRoutes(app: FastifyInstance) {
             const friend = c.fromUserId === userId ? c.toUser : c.fromUser;
             return {
                 id: c.id,
-                odName: friend.displayName,
+                displayName: friend.displayName,
                 avatarUrl: friend.avatarUrl,
                 bio: friend.bio,
                 connectedAt: c.createdAt,

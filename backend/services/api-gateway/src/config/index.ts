@@ -29,4 +29,12 @@ export const config = {
     redis: {
         url: process.env.REDIS_URL || 'redis://localhost:6379',
     },
+
+    admin: {
+        apiKey: process.env.ADMIN_API_KEY || 'nomadly-admin-secret-2026',
+        adminEmails: (process.env.ADMIN_EMAILS || '')
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .filter(Boolean),
+    },
 };

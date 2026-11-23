@@ -170,11 +170,14 @@ export default function SignupScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <Link href="/(auth)/login" asChild>
-                        <TouchableOpacity style={styles.backButton}>
-                            <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
-                        </TouchableOpacity>
-                    </Link>
+                    <View style={styles.signupHeaderRow}>
+                        <Link href="/(auth)/login" asChild>
+                            <TouchableOpacity style={styles.backButton}>
+                                <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+                            </TouchableOpacity>
+                        </Link>
+                        <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
+                    </View>
                     <Text style={styles.title}>Create Account</Text>
                     <Text style={styles.subtitle}>Join the global community of travelers</Text>
                 </View>
@@ -212,15 +215,13 @@ export default function SignupScreen() {
                     )}
 
                     {Platform.OS === 'ios' && (
-                        <TouchableOpacity
-                            style={[styles.socialButton, styles.appleButton]}
+                        <AppleAuthentication.AppleAuthenticationButton
+                            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                            cornerRadius={8}
+                            style={styles.appleButton}
                             onPress={handleAppleSignIn}
-                        >
-                            <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-                            <Text style={[styles.socialButtonText, styles.appleButtonText]}>
-                                Continue with Apple
-                            </Text>
-                        </TouchableOpacity>
+                        />
                     )}
                 </View>
 
@@ -347,8 +348,18 @@ const styles = StyleSheet.create({
     header: {
         marginBottom: Spacing.xl,
     },
-    backButton: {
+    signupHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: Spacing.md,
+    },
+    backButton: {
+    },
+    logo: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
     },
     title: {
         ...Typography.h1,
@@ -397,11 +408,8 @@ const styles = StyleSheet.create({
         color: Colors.text.primary,
     },
     appleButton: {
-        backgroundColor: '#000000',
-        borderColor: '#000000',
-    },
-    appleButtonText: {
-        color: '#FFFFFF',
+        width: '100%',
+        height: 48,
     },
     divider: {
         flexDirection: 'row',

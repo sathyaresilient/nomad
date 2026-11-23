@@ -7,15 +7,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
+    ActionSheetIOS,
+    Alert,
     Dimensions,
     Image,
+    Platform,
     ScrollView,
+    Share,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
 import { mockUsers } from '../../src/data/mockUsers';
+import { ModerationAPI } from '../../src/lib/api';
+import { analytics, ANALYTICS_EVENTS } from '../../src/lib/analytics';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +39,94 @@ export default function NomadProfileScreen() {
 
     // Find user by id or use first mock user
     const user = mockUsers.find(u => u.id === id) || mockUsers[0];
+
+    const handleShare = async () => {
+        try {
+            await Share.share({
+                message: `Check out ${user.displayName}'s profile on Nomadly!`,
+            });
+        } catch (e) {
+            // ignore
+        }
+    };
+
+    const handleReport = (reason: string) => {
+        ModerationAPI.reportUser(user.id, reason);
+        analytics.track(ANALYTICS_EVENTS.USER_REPORTED, {
+            targetUserId: user.id,
+            reason,
+        });
+        Alert.alert(
+            'Report Received',
+            'Thank you for reporting. Our moderation team reviews all flagged profiles within 24 hours to keep the community safe.',
+            [{ text: 'OK' }]
+        );
+    };
+
+    const showReportReasons = () => {
+        Alert.alert(
+            'Report User',
+            'Please select the reason for reporting this user:',
+            [
+                { text: 'Inappropriate Content or Photos', onPress: () => handleReport('Inappropriate Content') },
+                { text: 'Harassment or Bullying', onPress: () => handleReport('Harassment') },
+                { text: 'Spam or Scam', onPress: () => handleReport('Spam or Scam') },
+                { text: 'Impersonation or Fake Profile', onPress: () => handleReport('Impersonation') },
+                { text: 'Cancel', style: 'cancel' },
+            ]
+        );
+    };
+
+    const handleBlock = () => {
+        Alert.alert(
+            `Block ${user.displayName}?`,
+            'You will no longer see their trips, posts, or messages, and they will not be able to find your profile.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Block User',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await ModerationAPI.blockUser(user.id);
+                        analytics.track(ANALYTICS_EVENTS.USER_BLOCKED, {
+                            targetUserId: user.id,
+                        });
+                        Alert.alert('User Blocked', `${user.displayName} has been blocked.`);
+                        router.back();
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleSafetyMenu = () => {
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options: ['Cancel', 'Report User', 'Block User'],
+                    destructiveButtonIndex: 2,
+                    cancelButtonIndex: 0,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 1) {
+                        showReportReasons();
+                    } else if (buttonIndex === 2) {
+                        handleBlock();
+                    }
+                }
+            );
+        } else {
+            Alert.alert(
+                'Safety & Moderation',
+                `Options for ${user.displayName}`,
+                [
+                    { text: 'Report User', onPress: showReportReasons },
+                    { text: 'Block User', style: 'destructive', onPress: handleBlock },
+                    { text: 'Cancel', style: 'cancel' },
+                ]
+            );
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -53,9 +147,14 @@ export default function NomadProfileScreen() {
                         <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
                             <Ionicons name="arrow-back" size={22} color="#FFF" />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.headerButton}>
-                            <Ionicons name="share-outline" size={22} color="#FFF" />
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
+                                <Ionicons name="share-outline" size={22} color="#FFF" />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.headerButton} onPress={handleSafetyMenu}>
+                                <Ionicons name="ellipsis-horizontal" size={22} color="#FFF" />
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     {/* Travel style badge */}

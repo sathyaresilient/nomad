@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { VisaStamp } from '../../src/components/passport/VisaStamp';
 import { currentUser } from '../../src/data/mockUsers';
+import { Colors } from '../../src/design/colors';
 
 // Extract user name parts
 const getNameParts = (displayName: string) => {
@@ -192,6 +193,24 @@ export default function ProfileScreen() {
                         </View>
                     </View>
 
+                    {/* Action Buttons */}
+                    <View style={styles.actionRow}>
+                        <TouchableOpacity
+                            style={styles.editProfileBtn}
+                            onPress={() => router.push('/profile/edit')}
+                        >
+                            <Ionicons name="create-outline" size={18} color={Colors.primary.main} />
+                            <Text style={styles.editProfileText}>Edit Profile</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.nomadpicBtn}
+                            onPress={() => router.push('/biopic')}
+                        >
+                            <Ionicons name="images-outline" size={18} color="#6366F1" />
+                            <Text style={styles.nomadpicBtnText}>Nomadpic</Text>
+                        </TouchableOpacity>
+                    </View>
+
                     {/* Share Button */}
                     <TouchableOpacity
                         style={styles.shareButton}
@@ -244,7 +263,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 16,
-        paddingBottom: 40,
+        paddingBottom: 80,
     },
 
     // Passport Card
@@ -449,6 +468,45 @@ const styles = StyleSheet.create({
     badgeLevel: {
         fontSize: 10,
         color: '#9CA3AF',
+    },
+
+    // Action Row
+    actionRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 16,
+    },
+    editProfileBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: Colors.primary.main,
+    },
+    editProfileText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: Colors.primary.main,
+    },
+    nomadpicBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#6366F1',
+    },
+    nomadpicBtnText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#6366F1',
     },
 
     // Share Button

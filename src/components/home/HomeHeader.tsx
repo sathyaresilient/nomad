@@ -3,52 +3,57 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../design/colors';
+import { useAuthStore } from '../../store/authStore';
 
 export const HomeHeader = () => {
     const router = useRouter();
+    const { user } = useAuthStore();
+
+    const displayName = user?.displayName || 'Traveler';
+    const avatarUrl = user?.avatarUrl;
+    const initials = displayName.charAt(0).toUpperCase();
 
     return (
         <View style={styles.container}>
             <View style={styles.row}>
-                {/* Profile Avatar with Location */}
-                <TouchableOpacity onPress={() => router.push('/biopic')} style={styles.profileSection}>
-                    <Image
-                        source={{ uri: 'https://i.pravatar.cc/150?u=alex' }}
-                        style={styles.avatar}
-                    />
+                {/* Profile Avatar */}
+                <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileSection}>
+                    {avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+                    ) : (
+                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                            <Text style={styles.avatarInitials}>{initials}</Text>
+                        </View>
+                    )}
                     <View style={styles.locationInfo}>
-                        <Text style={styles.userName}>Alex</Text>
+                        <Text style={styles.userName}>{displayName}</Text>
                         <View style={styles.locationRow}>
-                            <Ionicons name="location" size={12} color={Colors.primary.main} />
-                            <Text style={styles.locationText}>Lisbon, Portugal</Text>
+                            <View style={styles.statusDot} />
+                            <Text style={styles.locationText}>Online</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
 
-                {/* Quick Action Buttons */}
+                {/* App Logo + Action Buttons */}
                 <View style={styles.actionsRow}>
-                    {/* Groups Button */}
                     <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#FCE7F3' }]}
-                        onPress={() => router.push('/groups')}
+                        style={[styles.actionBtn, { backgroundColor: '#F0FDF4' }]}
+                        onPress={() => router.push('/explore/map')}
                     >
-                        <Ionicons name="chatbubbles-outline" size={18} color="#EC4899" />
+                        <Ionicons name="map-outline" size={20} color={Colors.primary.main} />
                     </TouchableOpacity>
-
-                    {/* Friends Button */}
-                    <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#FEF3C7' }]}
-                        onPress={() => router.push('/friends')}
-                    >
-                        <Ionicons name="people-outline" size={18} color="#F59E0B" />
-                    </TouchableOpacity>
-
-                    {/* Chat Button */}
                     <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: '#F0F9FF' }]}
+                        onPress={() => router.push('/friends')}
+                    >
+                        <Ionicons name="people-outline" size={20} color={Colors.primary.main} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: '#FCE7F3' }]}
                         onPress={() => router.push('/chat')}
                     >
-                        <Ionicons name="chatbubble-ellipses-outline" size={18} color={Colors.primary.main} />
+                        <Ionicons name="chatbubble-outline" size={20} color="#EC4899" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -59,7 +64,7 @@ export const HomeHeader = () => {
 const styles = StyleSheet.create({
     container: {
         paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingTop: 12,
         paddingBottom: 20,
         backgroundColor: '#FFF',
     },
@@ -80,6 +85,16 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: Colors.primary.main,
     },
+    avatarPlaceholder: {
+        backgroundColor: Colors.primary.main,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarInitials: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#FFF',
+    },
     locationInfo: {
         gap: 2,
     },
@@ -91,7 +106,13 @@ const styles = StyleSheet.create({
     locationRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 6,
+    },
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#22C55E',
     },
     locationText: {
         fontSize: 12,
@@ -99,13 +120,13 @@ const styles = StyleSheet.create({
     },
     actionsRow: {
         flexDirection: 'row',
-        gap: 8,
+        alignItems: 'center',
+        gap: 10,
     },
     actionBtn: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: '#FFE4E6',
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         alignItems: 'center',
         justifyContent: 'center',
     },

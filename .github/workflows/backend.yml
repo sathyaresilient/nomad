@@ -169,6 +169,9 @@ jobs:
           env_vars: |
             NODE_ENV=production
             DATABASE_URL=${{ secrets.DATABASE_URL }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            ADMIN_API_KEY=${{ secrets.ADMIN_API_KEY }}
+            ADMIN_EMAILS=${{ secrets.ADMIN_EMAILS }}
           flags: |
             --min-instances=0
             --max-instances=10

@@ -36,6 +36,8 @@ import { tripsRoutes } from './routes/trips.js';
 import { usersRoutes } from './routes/users.js';
 import { verificationRoutes } from './routes/verification.js';
 import feedbackRoutes from './routes/feedback.js';
+import { adminRoutes } from './routes/admin.js';
+import { renderAdminConsoleHtml } from './admin/consoleHtml.js';
 
 // Initialize Sentry first
 initSentry();
@@ -244,12 +246,18 @@ async function registerRoutes() {
         </div>
         <div class="links">
             <a href="/docs">API Documentation</a>
+            <a href="/admin">Admin Console</a>
             <a href="/health">Health Check</a>
         </div>
     </div>
 </body>
 </html>
         `);
+    });
+
+    // Embedded Web Admin Console (Self-contained management UI)
+    app.get('/admin', async (_request, reply) => {
+        reply.type('text/html').send(renderAdminConsoleHtml());
     });
 
     // Auth routes (no auth required)
@@ -261,6 +269,9 @@ async function registerRoutes() {
     await app.register(groupsRoutes, { prefix: '/api/v1/groups' });
     await app.register(tripsRoutes, { prefix: '/api/v1/trips' });
     await app.register(chatRoutes, { prefix: '/api/v1/chat' });
+
+    // Admin & Operations API
+    await app.register(adminRoutes, { prefix: '/api/v1/admin' });
 
     // New Phase 9-10 routes
     await app.register(mediaRoutes, { prefix: '/api/v1/media' });

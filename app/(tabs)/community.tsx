@@ -33,6 +33,21 @@ export default function CommunityScreen() {
                 </TouchableOpacity>
             </View>
 
+            {/* Groups Quick Access */}
+            <TouchableOpacity
+                style={styles.groupsBanner}
+                onPress={() => router.push('/groups')}
+            >
+                <View style={styles.groupsBannerLeft}>
+                    <Ionicons name="people" size={20} color={Colors.primary.main} />
+                    <View>
+                        <Text style={styles.groupsBannerTitle}>Groups</Text>
+                        <Text style={styles.groupsBannerSub}>Join or create travel groups</Text>
+                    </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
             {/* Categories */}
             <View style={styles.categoryContainer}>
                 <FlatList
@@ -91,8 +106,33 @@ const styles = StyleSheet.create({
     categoryContainer: {
         paddingVertical: 16,
     },
+    groupsBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginHorizontal: 20,
+        padding: 14,
+        backgroundColor: '#F0FDFA',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#CCFBF1',
+    },
+    groupsBannerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    groupsBannerTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#0F172A',
+    },
+    groupsBannerSub: {
+        fontSize: 12,
+        color: '#64748B',
+    },
     feedContent: {
         paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingBottom: 80,
     },
 });

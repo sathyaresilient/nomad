@@ -112,8 +112,31 @@ const mockConversations: Conversation[] = [
     },
 ];
 
+// Mock group conversations
+const mockGroupChats = [
+    {
+        id: 'g1',
+        name: 'Lisbon Digital Nomads',
+        avatarEmoji: '🇵🇹',
+        memberCount: 24,
+        lastMessage: 'Anyone at Outsite today?',
+        lastMessageTime: new Date(Date.now() - 1000 * 60 * 15),
+        unreadCount: 3,
+    },
+    {
+        id: 'g2',
+        name: 'Surf & Work Crew',
+        avatarEmoji: '🏄',
+        memberCount: 8,
+        lastMessage: 'Sunrise session tomorrow 6am?',
+        lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 2),
+        unreadCount: 0,
+    },
+];
+
 export default function ChatScreen() {
     const router = useRouter();
+    const [activeTab, setActiveTab] = React.useState<'direct' | 'groups'>('direct');
 
     const formatTime = (date: Date) => {
         const now = new Date();
@@ -185,25 +208,79 @@ export default function ChatScreen() {
                 </View>
             </View>
 
+            {/* Tab Switcher */}
+            <View style={styles.tabSwitcher}>
+                <TouchableOpacity
+                    style={[styles.tabBtn, activeTab === 'direct' && styles.tabBtnActive]}
+                    onPress={() => setActiveTab('direct')}
+                >
+                    <Text style={[styles.tabBtnText, activeTab === 'direct' && styles.tabBtnTextActive]}>Direct</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tabBtn, activeTab === 'groups' && styles.tabBtnActive]}
+                    onPress={() => setActiveTab('groups')}
+                >
+                    <Text style={[styles.tabBtnText, activeTab === 'groups' && styles.tabBtnTextActive]}>Groups</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* Conversations List */}
-            {mockConversations.length > 0 ? (
+            {activeTab === 'direct' ? (
+                mockConversations.length > 0 ? (
+                    <FlatList
+                        data={mockConversations}
+                        keyExtractor={item => item.id}
+                        renderItem={renderConversation}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
+                    />
+                ) : (
+                    <View style={styles.emptyState}>
+                        <View style={styles.emptyIcon}>
+                            <Ionicons name="chatbubble-outline" size={48} color={Colors.text.muted} />
+                        </View>
+                        <Text style={styles.emptyTitle}>No messages yet</Text>
+                        <Text style={styles.emptyText}>
+                            Connect with travelers in the Discover tab to start chatting!
+                        </Text>
+                    </View>
+                )
+            ) : (
                 <FlatList
-                    data={mockConversations}
+                    data={mockGroupChats}
                     keyExtractor={item => item.id}
-                    renderItem={renderConversation}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.conversationItem}
+                            onPress={() => router.push(`/groups/${item.id}`)}
+                        >
+                            <View style={styles.groupAvatarContainer}>
+                                <Text style={styles.groupEmoji}>{item.avatarEmoji}</Text>
+                            </View>
+                            <View style={styles.conversationContent}>
+                                <View style={styles.conversationHeader}>
+                                    <Text style={styles.conversationName}>{item.name}</Text>
+                                    <Text style={styles.conversationTime}>
+                                        {formatTime(item.lastMessageTime)}
+                                    </Text>
+                                </View>
+                                <View style={styles.conversationPreview}>
+                                    <Text style={[styles.conversationMessage, item.unreadCount > 0 && styles.unreadMessage]} numberOfLines={1}>
+                                        {item.lastMessage}
+                                    </Text>
+                                    {item.unreadCount > 0 && (
+                                        <View style={styles.unreadBadge}>
+                                            <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <Text style={styles.memberCountText}>{item.memberCount} members</Text>
+                            </View>
+                        </TouchableOpacity>
+                    )}
                 />
-            ) : (
-                <View style={styles.emptyState}>
-                    <View style={styles.emptyIcon}>
-                        <Ionicons name="chatbubble-outline" size={48} color={Colors.text.muted} />
-                    </View>
-                    <Text style={styles.emptyTitle}>No messages yet</Text>
-                    <Text style={styles.emptyText}>
-                        Connect with travelers in the Discover tab to start chatting!
-                    </Text>
-                </View>
             )}
         </SafeAreaView>
     );
@@ -239,8 +316,49 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    tabSwitcher: {
+        flexDirection: 'row',
+        marginHorizontal: Layout.screenPadding,
+        backgroundColor: Colors.background.muted,
+        borderRadius: 20,
+        padding: 4,
+        marginBottom: Spacing.sm,
+    },
+    tabBtn: {
+        flex: 1,
+        paddingVertical: 8,
+        alignItems: 'center',
+        borderRadius: 18,
+    },
+    tabBtnActive: {
+        backgroundColor: Colors.background.primary,
+    },
+    tabBtnText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: Colors.text.muted,
+    },
+    tabBtnTextActive: {
+        color: Colors.primary.main,
+    },
+    groupAvatarContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: Colors.background.muted,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    groupEmoji: {
+        fontSize: 24,
+    },
+    memberCountText: {
+        fontSize: 11,
+        color: Colors.text.muted,
+        marginTop: 2,
+    },
     listContent: {
-        paddingBottom: Spacing['3xl'],
+        paddingBottom: 80,
     },
     conversationItem: {
         flexDirection: 'row',

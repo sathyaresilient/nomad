@@ -6,18 +6,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../src/design';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
+  // On web there are no system nav bars, just need enough space for labels
+  // On mobile, respect safe area insets for system nav bar clearance
+  const bottomPadding = Platform.OS === 'web'
+    ? 8
+    : Math.max(insets.bottom, 20);
+  const tabBarHeight = 60 + bottomPadding;
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: [styles.tabBar, { paddingBottom: Math.max(insets.bottom, 8), height: 56 + Math.max(insets.bottom, 8) }],
+        tabBarStyle: [styles.tabBar, { paddingBottom: bottomPadding, height: tabBarHeight }],
         tabBarActiveTintColor: Colors.primary.main,
         tabBarInactiveTintColor: Colors.text.muted,
         tabBarLabelStyle: styles.tabBarLabel,

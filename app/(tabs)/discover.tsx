@@ -33,19 +33,20 @@ export default function DiscoverFeedScreen() {
                 </View>
 
                 {/* Chips */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipsScroll}
-                    style={{ maxHeight: 50 }}
-                >
-                    {FILTER_CHIPS.map((chip, i) => (
-                        <TouchableOpacity key={i} style={styles.chip}>
-                            <Ionicons name={chip.icon as any} size={14} color="#64748B" />
-                            <Text style={styles.chipText}>{chip.label}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                <View style={styles.chipsRow}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.chipsScroll}
+                    >
+                        {FILTER_CHIPS.map((chip, i) => (
+                            <TouchableOpacity key={i} style={styles.chip}>
+                                <Ionicons name={chip.icon as any} size={14} color="#64748B" />
+                                <Text style={styles.chipText}>{chip.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
 
                 {/* Scrollable Content */}
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'android' ? 40 : 10,
+        paddingTop: 10,
         paddingBottom: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -142,31 +143,34 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    chipsRow: {
+        backgroundColor: '#FFF',
+    },
     chipsScroll: {
         paddingHorizontal: 20,
         paddingVertical: 10,
-        gap: 8,
-        backgroundColor: '#FFF',
+        flexDirection: 'row',
     },
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         borderRadius: 20,
         borderWidth: 1,
         borderColor: '#E2E8F0',
         backgroundColor: '#FFF',
+        marginRight: 8,
     },
     chipText: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '600',
         color: '#475569',
+        marginLeft: 6,
     },
     scrollContent: {
         padding: 20,
-        paddingBottom: 40,
+        paddingBottom: 80,
     },
     sectionHeader: {
         flexDirection: 'row',

@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Colors } from '../src/design';
 import { useAuthStore } from '../src/store/authStore';
@@ -77,6 +78,7 @@ export default function RootLayout() {
 
 function RootLayoutNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
+    <SafeAreaProvider>
     <ThemeProvider value={NomadlyTheme}>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
@@ -110,5 +112,6 @@ function RootLayoutNav({ isAuthenticated }: { isAuthenticated: boolean }) {
         )}
       </Stack>
     </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

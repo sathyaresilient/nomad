@@ -4,12 +4,17 @@
  */
 
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
 import { appleOAuth, googleOAuth, oauthConfig } from '../config/oauth.js';
 import { prisma } from '../lib/prisma.js';
 import { redis } from '../lib/redis.js';
+
+function hashRefreshToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 // State storage TTL (10 minutes)
 const STATE_TTL = 600;
@@ -137,7 +142,7 @@ export async function oauthRoutes(
             );
 
             const refreshToken = uuid();
-            const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+            const refreshTokenHash = hashRefreshToken(refreshToken);
 
             await prisma.userSession.create({
                 data: {
@@ -214,7 +219,7 @@ export async function oauthRoutes(
             );
 
             const refreshToken = uuid();
-            const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+            const refreshTokenHash = hashRefreshToken(refreshToken);
 
             await prisma.userSession.create({
                 data: {
@@ -354,7 +359,7 @@ export async function oauthRoutes(
             );
 
             const refreshToken = uuid();
-            const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+            const refreshTokenHash = hashRefreshToken(refreshToken);
 
             await prisma.userSession.create({
                 data: {
@@ -436,7 +441,7 @@ export async function oauthRoutes(
             );
 
             const refreshToken = uuid();
-            const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+            const refreshTokenHash = hashRefreshToken(refreshToken);
 
             await prisma.userSession.create({
                 data: {

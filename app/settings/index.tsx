@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../src/design/colors';
+import { UsersAPI } from '../../src/lib/api';
+import { useAuthStore } from '../../src/store/authStore';
 
 type SettingItem = {
     icon: keyof typeof Ionicons.glyphMap;
@@ -19,6 +21,13 @@ const settingsSections: { title: string; items: SettingItem[] }[] = [
             { icon: 'shield-checkmark-outline', label: 'Privacy', route: '/settings/privacy' },
             { icon: 'notifications-outline', label: 'Notifications' },
             { icon: 'globe-outline', label: 'Language' },
+        ],
+    },
+    {
+        title: 'Host',
+        items: [
+            { icon: 'home-outline', label: 'Local Mode', route: '/local-mode' },
+            { icon: 'people-outline', label: 'Browse Local Guides', route: '/local-mode/browse' },
         ],
     },
     {
@@ -40,20 +49,80 @@ const settingsSections: { title: string; items: SettingItem[] }[] = [
         title: 'Account Actions',
         items: [
             { icon: 'log-out-outline', label: 'Log Out', danger: true },
+            { icon: 'trash-outline', label: 'Delete Account', danger: true },
         ],
     },
 ];
 
 export default function SettingsScreen() {
     const router = useRouter();
+    const { logout } = useAuthStore();
 
     const handlePress = (item: SettingItem) => {
         if (item.route) {
             router.push(item.route as any);
+        } else if (item.label === 'Notifications') {
+            Alert.alert('Notifications', 'Push notifications are enabled for new messages, trip matches, and safety alerts.');
+        } else if (item.label === 'Language') {
+            Alert.alert('Language', 'Nomadly is currently in English (US). Additional languages coming soon!');
+        } else if (item.label === 'Connected Accounts') {
+            router.push('/verification/start');
+        } else if (item.label === 'Help Center') {
+            Alert.alert(
+                'Help Center',
+                'Need assistance or have questions about Nomadly? Contact our community support team at support@nomadly.community.',
+                [
+                    { text: 'Email Support', onPress: () => Linking.openURL('mailto:support@nomadly.community') },
+                    { text: 'OK', style: 'cancel' },
+                ]
+            );
+        } else if (item.label === 'Terms & Policies') {
+            Alert.alert(
+                'Terms & Policies',
+                'Please review our community guidelines, terms of service, and privacy policy.',
+                [
+                    { text: 'Terms of Service', onPress: () => Linking.openURL('https://nomadly.community/terms') },
+                    { text: 'Privacy Policy', onPress: () => Linking.openURL('https://nomadly.community/privacy') },
+                    { text: 'Close', style: 'cancel' },
+                ]
+            );
         } else if (item.label === 'Log Out') {
-            alert('Logging out...');
-        } else {
-            alert(`${item.label} - Coming soon!`);
+            Alert.alert(
+                'Log Out',
+                'Are you sure you want to log out?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Log Out',
+                        style: 'destructive',
+                        onPress: async () => {
+                            await logout();
+                            router.replace('/(auth)/login');
+                        },
+                    },
+                ]
+            );
+        } else if (item.label === 'Delete Account') {
+            Alert.alert(
+                'Delete Account',
+                'Are you sure you want to delete your account? All your profile data, trips, and connections will be permanently removed. This action cannot be undone.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: async () => {
+                            try {
+                                await UsersAPI.deleteMe();
+                            } catch (e) {
+                                // proceed with local logout even if network call fails
+                            }
+                            await logout();
+                            router.replace('/(auth)/login');
+                        },
+                    },
+                ]
+            );
         }
     };
 
