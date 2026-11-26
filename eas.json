@@ -26,6 +26,15 @@
         "EXPO_PUBLIC_API_URL": "https://api.nomadly.community"
       }
     },
+    "preview-simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.nomadly.community"
+      }
+    },
     "production": {
       "ios": {
         "autoIncrement": true
