@@ -2,6 +2,7 @@
   "expo": {
     "name": "Nomadly",
     "slug": "nomadly",
+    "owner": "sathya12336",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -38,7 +39,8 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -79,7 +81,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d3924380-0680-4994-a226-2cffd01ef908"
+        "projectId": "88bbba05-7acb-4b84-be33-2a68595af8b4"
       }
     }
   }
